@@ -444,8 +444,9 @@ window.__ModuleLoader__.load({
 .leaf-btn.primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}
 .leaf-btn.ghost{border-color:transparent;background:transparent}
 .leaf-btn.ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
-.leaf-btn.icon{width:30px;padding:0}
+.leaf-btn.icon{width:34px;padding:0}
 .leaf-btn.small{height:28px;padding:0 9px;font-size:12px;border-radius:6px}
+.leaf-btn.icon.small{padding:0;width:34px;height:32px}
 .leaf-btn.danger{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l2)}
 .leaf-select{height:30px;max-width:230px;padding:0 8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer}
 .leaf-select:focus-visible,.leaf-btn:focus-visible,.leaf-input:focus-visible,.leaf-textarea:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
@@ -1267,7 +1268,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         onClick: () => (isDir ? onToggle(entry.path) : onOpen(entry)),
       },
         isDir ? h(Chevron, { open: expanded.has(entry.path) }) : h('span', { style: { width: 14, flex: 'none' } }),
-        isDir ? h(Icon, { name: 'folder', size: 22 }) : h(TypeBadge, { name: entry.name }),
+        isDir ? h(Icon, { name: 'folder', size: 24 }) : h(TypeBadge, { name: entry.name }),
         h('span', { className: 'leaf-name' }, entry.name),
       )
     }
@@ -1310,13 +1311,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }
       return h('div', { className: 'leaf-tree', style: width === undefined ? undefined : { width } },
         h('div', { className: 'leaf-pane-head' },
-          h(Icon, { name: 'folder', size: 22 }),
+          h(Icon, { name: 'folder', size: 24 }),
           h('span', null, t('tree.title')),
           h('span', { className: 'leaf-spacer' }),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus', size: 20 })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.init'), onClick: onInit }, h(Icon, { name: 'file', size: 20 })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.refresh'), onClick: onRefresh }, h(Icon, { name: 'refresh', size: 20 })),
-          onClose === undefined ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 20 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus', size: 24 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.init'), onClick: onInit }, h(Icon, { name: 'file', size: 24 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.refresh'), onClick: onRefresh }, h(Icon, { name: 'refresh', size: 24 })),
+          onClose === undefined ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 24 })),
         ),
         h('div', { className: 'leaf-tree-scroll' },
           loading ? h('div', { className: 'leaf-tree-hint' }, t('common.loading')) : renderDir('', 0),
@@ -1442,12 +1443,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             className: `leaf-tab${tab === 'pdf' ? ' active' : ''}`,
             onClick: () => onTab('pdf'),
             title: t('paper.title'),
-          }, h(Icon, { name: 'file', size: 20 }), h('span', { className: 'leaf-name' }, t('paper.title'))),
+          }, h(Icon, { name: 'file', size: 24 }), h('span', { className: 'leaf-name' }, t('paper.title'))),
           h('div', {
             className: `leaf-tab${tab === 'log' ? ' active' : ''}`,
             onClick: () => onTab('log'),
             title: t('log.title'),
-          }, h(Icon, { name: 'warning', size: 20 }), h('span', { className: 'leaf-name' }, t('log.title')),
+          }, h(Icon, { name: 'warning', size: 24 }), h('span', { className: 'leaf-name' }, t('log.title')),
             problems > 0 ? h('span', { className: 'leaf-ext', style: { width: 'auto', padding: '0 5px' } }, String(problems)) : null),
           tab === 'pdf'
             ? h('div', { className: 'leaf-pdf-actions' },
@@ -1469,9 +1470,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   h('option', { value: 'width' }, t('paper.fitWidth')),
                   h('option', { value: 'page' }, t('paper.fitPage')),
                 ),
-                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 20 })),
-                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 20 })),
-                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external', size: 20 })),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 24 })),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 24 })),
+                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external', size: 24 })),
               )
             : null,
         ),
@@ -1542,7 +1543,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             },
           }, h(Icon, { name: 'copy' }), t('preview.copyPath')),
           h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('preview.reveal'), onClick: () => api('/reveal', { body: { workspace, path: preview.path } }).catch(() => {}) }, h(Icon, { name: 'location' })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 20 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 24 })),
         ),
         h('div', { className: 'leaf-preview-body' },
           preview.kind === 'image'
@@ -2309,7 +2310,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             className: `leaf-btn icon small ${drawerOpen ? '' : 'ghost'}`,
             title: t('tree.title'),
             onClick: () => setDrawerOpenRaw((value) => !boolStored(value, false)),
-          }, h(Icon, { name: 'folder', size: 22 })),
+          }, h(Icon, { name: 'folder', size: 26 })),
           h('label', { className: 'leaf-field' },
             h('span', null, t('toolbar.main')),
             h('select', {
@@ -2365,8 +2366,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                 className: 'leaf-btn primary',
                 onClick: () => compile(),
                 disabled: project?.mainDocument === null || environment?.available === false,
-              }, h(Icon, { name: 'play', size: 20 }), t('toolbar.compile')),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings', size: 20 })),
+              }, h(Icon, { name: 'play', size: 22 }), t('toolbar.compile')),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings', size: 24 })),
         ),
         dirtyCount > 0 ? h('div', { className: 'leaf-banner' }, h('span', null, `${dirtyCount} ${t('editor.unsaved')}`), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => saveTab(activeTabPath) }, t('editor.save'))) : null,
         state?.ambiguousMain === true ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('main.ambiguous'))) : null,
