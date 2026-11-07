@@ -23,6 +23,8 @@ window.__ModuleLoader__.load({
       showHidden: 'dsh-leaf.showHidden',
       showAux: 'dsh-leaf.showAux',
       logOpen: 'dsh-leaf.logOpen',
+      drawer: 'dsh-leaf.drawer',
+      agentOpen: 'dsh-leaf.agentOpen',
     }
     const PANEL_ID = 'leaf'
     const MENU_OPEN = 'dsh-leaf.open'
@@ -92,6 +94,16 @@ window.__ModuleLoader__.load({
       'editor.agentPromptFile': '文件：{path}（第 {from} 行到第 {to} 行）',
       'editor.agentPromptSelection': '选中的源码如下：',
       'editor.agentPromptAsk': '要求：',
+      'agent.title': 'Writing Agent',
+      'agent.native': '原生会话',
+      'agent.placeholder': '说明要改什么，例如：把这段改写得更紧凑，保留引用键与实验数值。',
+      'agent.send': '发送到 Writing Agent',
+      'agent.context': '上下文',
+      'agent.file': '当前文件',
+      'agent.selection': '选区',
+      'agent.noFile': '未打开文件',
+      'agent.noSelection': '未选择文本（将使用当前文件）',
+      'agent.hint': '⌘↵ 发送；Agent 会在原生会话中继续，聊天记录仍由宿主管理。',
       'editor.copied': '已复制引用，可粘贴到对话中。',
       'editor.locateFailed': '定位失败：请重新完整编译后再试。',
       'paper.title': '论文 PDF',
@@ -263,6 +275,16 @@ window.__ModuleLoader__.load({
       'editor.agentPromptFile': 'File: {path} (lines {from}-{to})',
       'editor.agentPromptSelection': 'Selected source:',
       'editor.agentPromptAsk': 'Request:',
+      'agent.title': 'Writing Agent',
+      'agent.native': 'native session',
+      'agent.placeholder': 'Describe the change, e.g. tighten this paragraph while keeping citation keys and numbers.',
+      'agent.send': 'Send to Writing Agent',
+      'agent.context': 'Context',
+      'agent.file': 'Current file',
+      'agent.selection': 'Selection',
+      'agent.noFile': 'No file open',
+      'agent.noSelection': 'No selection (uses the current file)',
+      'agent.hint': '⌘↵ sends; the Agent continues in the native session and owns its transcript.',
       'editor.copied': 'Reference copied; paste it into the conversation.',
       'editor.locateFailed': 'Locate failed: run a full build and try again.',
       'paper.title': 'Paper PDF',
@@ -406,8 +428,10 @@ window.__ModuleLoader__.load({
 .leaf-dot{width:7px;height:7px;border-radius:50%;background:var(--dsw-alias-label-tertiary);flex:none}
 .leaf-dot.ok{background:#2fa86a}.leaf-dot.warn{background:#d99a2b}.leaf-dot.bad{background:#d9534f}.leaf-dot.busy{background:#3a6fd8;animation:leaf-pulse 1s infinite}
 @keyframes leaf-pulse{0%,100%{opacity:.35}50%{opacity:1}}
-.leaf-body{display:flex;flex:1;min-height:0;min-width:0}
+.leaf-body{display:flex;flex:1;min-height:0;min-width:0;position:relative}
 .leaf-tree{display:flex;flex-direction:column;min-width:170px;max-width:420px;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l1);flex:none}
+.leaf-drawer{position:absolute;left:0;top:0;bottom:0;width:280px;z-index:8;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l2);box-shadow:8px 0 24px rgba(0,0,0,.12);display:flex;flex-direction:column;min-height:0}
+.leaf-drawer .leaf-tree{width:100%;max-width:none;border-right:0;flex:1;min-height:0}
 .leaf-pane-head{display:flex;align-items:center;gap:5px;height:34px;padding:0 7px 0 10px;border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}
 .leaf-pane-head .leaf-spacer{flex:1}
 .leaf-tree-scroll{flex:1;overflow:auto;padding:4px 0 16px;min-height:0}
@@ -445,6 +469,13 @@ window.__ModuleLoader__.load({
 .leaf-textarea::selection{background:var(--dsw-alias-bg-document-selection,#b9d7ff);color:transparent}
 .leaf-tok-cmd{color:#8a3fb0}.leaf-tok-comment{color:var(--dsw-alias-label-tertiary);font-style:italic}.leaf-tok-math{color:#1f6fb2}.leaf-tok-brace{color:var(--dsw-alias-label-secondary)}.leaf-tok-env{color:#1f7a4d}.leaf-tok-opt{color:#b06a1f}
 body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .leaf-tok-math{color:#8cc4f5}body[data-ds-dark-theme] .leaf-tok-env{color:#8fd9ae}body[data-ds-dark-theme] .leaf-tok-opt{color:#e8b877}
+.leaf-agent-dock{display:flex;flex-direction:column;flex:none;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-height:0}
+.leaf-agent-body{display:flex;flex-direction:column;gap:6px;padding:6px 10px 10px;flex:1;min-height:0}
+.leaf-agent-input{flex:1;min-height:54px;resize:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:7px 9px;font:inherit;font-size:12.5px;line-height:1.5;outline:none}
+.leaf-agent-input:focus{border-color:var(--dsw-alias-state-business-primary)}
+.leaf-agent-actions{display:flex;align-items:center;gap:8px;flex:none}
+.leaf-agent-context{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);overflow:hidden;white-space:nowrap}
+.leaf-agent-context code{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--dsw-alias-bg-layer-2);padding:1px 4px;border-radius:4px;color:var(--dsw-alias-label-secondary)}
 .leaf-statusbar{display:flex;align-items:center;gap:10px;height:26px;padding:0 10px;border-top:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-tertiary);font-size:11.5px;flex:none;background:var(--dsw-alias-bg-base)}
 .leaf-statusbar .leaf-spacer{flex:1}
 .leaf-find{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none}
@@ -666,6 +697,52 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
     const boolStored = (raw, fallback) => (raw === '1' ? true : raw === '0' ? false : fallback)
 
+    /** Workspace paths the user pinned as dsh-leaf entries (client-side mirror). */
+    function pinnedPaths() {
+      try {
+        const parsed = JSON.parse(readStored('dsh-leaf.pinnedPaths', '[]'))
+        return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []
+      } catch {
+        return []
+      }
+    }
+    function setPinnedPath(path, pinned) {
+      const next = new Set(pinnedPaths())
+      if (pinned) next.add(path)
+      else next.delete(path)
+      writeStored('dsh-leaf.pinnedPaths', JSON.stringify([...next]))
+    }
+
+    /**
+     * Invisible shell watcher: entering a pinned workspace through a blank
+     * session opens the writing view, while new sessions inside that workspace
+     * keep the native conversation.
+     */
+    function PinnedWorkspaceOpener({ useSessions, useWorkspaces, usePanelInfo, open }) {
+      const active = useSessions((snapshot) => Object.values(snapshot.byId ?? {})
+        .find((item) => (item.retainedBy?.mainView ?? 0) > 0) ?? null)
+      const items = useWorkspaces((snapshot) => snapshot.items)
+      const panelId = usePanelInfo((info) => info.activePanelId)
+      const lastWorkspace = useRef(null)
+      useEffect(() => {
+        const cwd = active?.cwd
+        if (typeof cwd !== 'string' || cwd === '') return
+        const workspace = items.find((item) => cwd === item.path || cwd.startsWith(`${item.path}/`))
+        if (workspace === undefined) return
+        if (lastWorkspace.current === null) {
+          lastWorkspace.current = workspace.path
+          return
+        }
+        if (lastWorkspace.current === workspace.path) return
+        lastWorkspace.current = workspace.path
+        if (panelId === 'leaf') return
+        if (active?.blank !== true) return
+        if (!pinnedPaths().includes(workspace.path)) return
+        open()
+      }, [active?.id, active?.cwd, active?.blank, items, panelId, open])
+      return null
+    }
+
     /* ------------------------------------------------------------------ */
     /* Icons                                                               */
     /* ------------------------------------------------------------------ */
@@ -863,7 +940,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     /** Virtualized textarea editor with a themed syntax layer. */
-    function LatexEditor({ tab, jump, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, t }) {
+    function LatexEditor({ tab, jump, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, onSelectionChange, t }) {
       const textareaRef = useRef(null)
       const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
@@ -921,6 +998,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         updateCursor()
       }, [jump?.at, tab?.path])
 
+      const lastSelection = useRef('')
       const updateCursor = useCallback(() => {
         const node = textareaRef.current
         if (node === null || tab === undefined) return
@@ -929,7 +1007,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const column = before.length - before.lastIndexOf('\n')
         setCursor({ line, column })
         onCursor?.({ line, column })
-      }, [tab?.content, onCursor])
+        const selected = node.value.slice(node.selectionStart, node.selectionEnd)
+        const fromLine = before.split('\n').length
+        const toLine = fromLine + (selected.split('\n').length - 1)
+        const signature = `${node.selectionStart}:${node.selectionEnd}:${selected.length}`
+        if (signature !== lastSelection.current) {
+          lastSelection.current = signature
+          onSelectionChange?.(selected === '' ? null : { path: tab.path, fromLine, toLine, text: selected })
+        }
+      }, [tab?.content, onCursor, onSelectionChange])
 
       useEffect(() => {
         updateCursor()
@@ -1123,7 +1209,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function FileTree({ dirs, expanded, loading, activePath, onToggle, onOpen, onLoad, t, showAux, showHidden, onToggleAux, onToggleHidden, onNewFile, onInit, onRefresh, onReveal, width }) {
+    function FileTree({ dirs, expanded, loading, activePath, onToggle, onOpen, onLoad, t, showAux, showHidden, onToggleAux, onToggleHidden, onNewFile, onInit, onRefresh, onReveal, onClose, width }) {
       const renderDir = (dirPath, depth) => {
         const bucket = dirs[dirPath]
         if (bucket === undefined) return null
@@ -1167,6 +1253,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus' })),
           h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.init'), onClick: onInit }, h(Icon, { name: 'file' })),
           h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.refresh'), onClick: onRefresh }, h(Icon, { name: 'refresh' })),
+          onClose === undefined ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close' })),
         ),
         h('div', { className: 'leaf-tree-scroll' },
           loading ? h('div', { className: 'leaf-tree-hint' }, t('common.loading')) : renderDir('', 0),
@@ -1371,13 +1458,18 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [build, setBuild] = useState({ status: 'idle', receipt: null })
       const [savedAt, setSavedAt] = useState(0)
       const [rightTab, setRightTab] = useState('pdf')
+      const [drawerOpenRaw, setDrawerOpenRaw] = usePersisted(STORAGE.drawer, false)
+      const drawerOpen = boolStored(drawerOpenRaw, false)
+      const [agentOpenRaw, setAgentOpenRaw] = usePersisted(STORAGE.agentOpen, true)
+      const agentOpen = boolStored(agentOpenRaw, true)
+      const [agentInput, setAgentInput] = useState('')
+      const [selection, setSelection] = useState(null)
       const [modal, setModal] = useState(null)
       const [pdfPage, setPdfPage] = useState('1')
       const [pdfFit, setPdfFit] = useState('width')
       const [pdfReloadKey, setPdfReloadKey] = useState(0)
       const [jump, setJump] = useState(null)
       const [toast, showToast] = useToast()
-      const [treeWidth, onTreeResize, persistTree] = useResizer(224, 170, 420, STORAGE.treeWidth)
       const [paperWidth, onPaperResize] = useResizer(540, 260, 1000, STORAGE.paperWidth, true)
       const [saving, setSaving] = useState(null)
       const alive = useRef(true)
@@ -1420,6 +1512,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           setActivePath(openRequest.path)
         }
       }, [openRequest?.at])
+
+      useEffect(() => {
+        setSelection(null)
+      }, [activeTabPath])
 
       useEffect(() => {
         if (workspaceItems.length === 0) return
@@ -1595,6 +1691,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
       const openFile = useCallback(async (entry) => {
         if (workspacePath === null) return
+        setDrawerOpenRaw(false)
         if (isImage(entry.name) || isPdf(entry.name)) {
           setPreview({ path: entry.path, name: entry.name, kind: isPdf(entry.name) ? 'pdf' : 'image', mtime: entry.mtime, size: entry.size })
           return
@@ -1837,6 +1934,27 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         props.startWritingAgent?.(activeWorkspace.workspaceId, lines.join('\n'))
       }, [activeWorkspace, receipt, project, t])
 
+      const sendDock = useCallback(() => {
+        if (activeWorkspace === null || activeWorkspace === undefined) return
+        const lines = [t('editor.agentPromptTitle'), '']
+        if (activeTab !== null) {
+          lines.push(`${t('agent.file')}: ${activeTab.path}`)
+          lines.push(`${t('modal.mainDoc')}: ${project?.mainDocument ?? '—'}`)
+          lines.push('')
+        }
+        if (selection !== null && selection.text !== undefined && selection.text.trim() !== ''
+          && (activeTab === null || selection.path === undefined || selection.path === activeTab.path)) {
+          lines.push(`${t('agent.selection')} (${selection.fromLine}-${selection.toLine}):`, '```latex', selection.text, '```', '')
+        }
+        lines.push(t('editor.agentPromptAsk'), agentInput.trim() === '' ? t('agent.placeholder') : agentInput.trim())
+        try {
+          props.startWritingAgent?.(activeWorkspace.workspaceId, lines.join('\n'))
+          setAgentInput('')
+        } catch (error) {
+          showToast(`${t('toast.error')}: ${error.message}`)
+        }
+      }, [activeWorkspace, activeTab, project, selection, agentInput, t, props])
+
       const sendToAgent = useCallback((payload) => {
         if (activeWorkspace === null || activeWorkspace === undefined) return
         const header = activeWorkspace.title || basename(activeWorkspace.path)
@@ -1947,6 +2065,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         /* Row 1: workspace + environment + settings */
         h('div', { className: 'leaf-toolbar' },
           h('div', { className: 'leaf-brand' }, h(LeafMark, { size: 18 }), h('span', null, 'dsh-leaf')),
+          h('button', {
+            type: 'button',
+            className: `leaf-btn small ${drawerOpen ? '' : 'ghost'}`,
+            title: t('tree.title'),
+            onClick: () => setDrawerOpenRaw((value) => !boolStored(value, false)),
+          }, h(Icon, { name: 'folder' }), t('tree.title')),
           h('label', { className: 'leaf-field' },
             h('span', null, t('toolbar.workspace')),
             h('select', {
@@ -2030,26 +2154,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         loadError !== null ? h('div', { className: 'leaf-banner bad' }, h(Icon, { name: 'warning' }), h('span', null, loadError), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => refreshState() }, t('common.retry'))) : null,
 
         h('div', { className: 'leaf-body' },
-          h(FileTree, {
-            dirs,
-            expanded,
-            loading: treeLoading,
-            activePath: activeTabPath ?? preview?.path ?? null,
-            onToggle: toggleDir,
-            onOpen: openFile,
-            onLoad: loadDir,
-            t,
-            showAux,
-            showHidden,
-            onToggleAux: () => setShowAuxRaw((value) => !boolStored(value, false)),
-            onToggleHidden: () => setShowHiddenRaw((value) => !boolStored(value, false)),
-            onNewFile: () => setModal({ kind: 'new-file' }),
-            onInit: () => setModal({ kind: 'init' }),
-            onRefresh: () => loadDir(''),
-            onReveal: (entry) => api('/reveal', { body: { workspace: workspacePath, path: entry.path } }).catch(() => {}),
-            width: treeWidth,
-          }),
-          h('div', { className: 'leaf-resizer', onPointerDown: onTreeResize, 'aria-hidden': true }),
           h('div', { className: 'leaf-editor-col' },
             h('div', { className: 'leaf-tabs' },
               tabs.map((tab) => h('div', {
@@ -2129,11 +2233,57 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       onCompile: () => compile(),
                       onReference: copyReference,
                       onSendToAgent: sendToAgent,
+                      onSelectionChange: setSelection,
                       onCursor: (payload) => {
                         if (payload?.locate === true) locateInPdf(payload)
                       },
                     }),
                   ),
+            h('div', { className: 'leaf-agent-dock', style: { height: agentOpen ? 196 : 30 } },
+              h('div', { className: 'leaf-log-head' },
+                h('button', {
+                  type: 'button',
+                  className: 'leaf-btn small ghost',
+                  title: agentOpen ? t('log.hide') : t('log.show'),
+                  onClick: () => setAgentOpenRaw((value) => !boolStored(value, true)),
+                }, h(Chevron, { open: agentOpen })),
+                h(LeafMark, { size: 13 }),
+                h('span', null, t('agent.title')),
+                h('span', { className: 'leaf-muted' }, `· ${t('agent.native')}`),
+                h('span', { className: 'leaf-spacer' }),
+                activeTab === null ? null : h('span', { className: 'leaf-muted', title: activeTab.path }, activeTab.path),
+              ),
+              agentOpen ? h('div', { className: 'leaf-agent-body' },
+                h('div', { className: 'leaf-agent-context' },
+                  h('span', null, `${t('agent.file')}:`),
+                  h('code', null, activeTab?.path ?? t('agent.noFile')),
+                  h('span', null, '·'),
+                  h('span', null, selection === null ? t('agent.noSelection') : `${t('agent.selection')} ${selection.fromLine}-${selection.toLine}`),
+                ),
+                h('textarea', {
+                  className: 'leaf-agent-input',
+                  value: agentInput,
+                  placeholder: t('agent.placeholder'),
+                  onChange: (event) => setAgentInput(event.target.value),
+                  onKeyDown: (event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                      event.preventDefault()
+                      sendDock()
+                    }
+                  },
+                }),
+                h('div', { className: 'leaf-agent-actions' },
+                  h('span', { className: 'leaf-muted', style: { fontSize: 11 } }, t('agent.hint')),
+                  h('span', { className: 'leaf-spacer' }),
+                  h('button', {
+                    type: 'button',
+                    className: 'leaf-btn small primary',
+                    disabled: activeWorkspace === null,
+                    onClick: sendDock,
+                  }, h(LeafMark, { size: 12 }), t('agent.send')),
+                ),
+              ) : null,
+            ),
           ),
           h('div', { className: 'leaf-resizer', onPointerDown: onPaperResize, 'aria-hidden': true }),
           h(PaperPane, {
@@ -2155,6 +2305,30 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             onFullLog: () => window.open(new URL(`dsh-leaf/log?${workspaceQuery(workspacePath)}`, document.baseURI).href, '_blank'),
             onFixWithAgent: fixWithAgent,
           }),
+          drawerOpen
+            ? h('div', { className: 'leaf-drawer' },
+                h(FileTree, {
+                  dirs,
+                  expanded,
+                  loading: treeLoading,
+                  activePath: activeTabPath ?? preview?.path ?? null,
+                  onToggle: toggleDir,
+                  onOpen: openFile,
+                  onLoad: loadDir,
+                  t,
+                  showAux,
+                  showHidden,
+                  onToggleAux: () => setShowAuxRaw((value) => !boolStored(value, false)),
+                  onToggleHidden: () => setShowHiddenRaw((value) => !boolStored(value, false)),
+                  onNewFile: () => setModal({ kind: 'new-file' }),
+                  onInit: () => setModal({ kind: 'init' }),
+                  onRefresh: () => loadDir(''),
+                  onReveal: (entry) => api('/reveal', { body: { workspace: workspacePath, path: entry.path } }).catch(() => {}),
+                  onClose: () => setDrawerOpenRaw(false),
+                  width: 280,
+                }),
+              )
+            : null,
         ),
         toast === null ? null : h('div', { className: 'leaf-toast' }, toast),
         modal === null ? null : renderModal(modal, {
@@ -2475,7 +2649,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           id: 'open',
           label: t('menu.open'),
           icon: { key: MENU_OPEN },
-          run: () => openLeaf(target.path),
+          run: async () => {
+            try {
+              await api('/workspace', { body: { workspace: target.path, action: 'pin' } })
+              setPinnedPath(target.path, true)
+            } catch (error) {
+              console.error('[dsh-leaf] pin workspace failed', error)
+            }
+            openLeaf(target.path)
+          },
         }],
       })), 'dsh-leaf: workspace menu action')
 
@@ -2488,6 +2670,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           label: t('menu.close'),
           run: async () => {
             try {
+              await api('/workspace', { body: { workspace: target.path, action: 'unpin' } })
+              setPinnedPath(target.path, false)
               await api('/state', { body: { workspace: target.path, patch: { enabled: false } } })
               ctx.contextMenus.notify(t('menu.disabled'), true)
             } catch (error) {

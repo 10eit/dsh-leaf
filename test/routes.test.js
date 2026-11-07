@@ -33,7 +33,7 @@ async function harness(root, options = {}) {
     connection: {
       requestRejection: () => options.rejection,
     },
-    workspaceRegistry: {
+    workspaceRegistry: options.registry ?? {
       list: () => (options.registered === false ? [] : [{ path: root }]),
     },
   }
@@ -114,6 +114,53 @@ test('client activation diagnostics are appended to the host log', async () => {
     assert.equal(response.status, 200)
     const log = await readFile(path.join(tmpdir(), 'dsh-leaf-client-errors.log'), 'utf8')
     assert.ok(log.includes('"stage":"test-stage"'))
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('pinning renames and reorders the workspace, unpinning restores the title', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-pin-'))
+  const changes = []
+  const entity = {
+    id: 'w1',
+    path: dir,
+    title: 'my-paper',
+    async setTitle(title) {
+      this.title = title
+      changes.push(['title', title])
+    },
+  }
+  const other = { id: 'w2', path: '/tmp/other', title: 'other', async setTitle() {} }
+  const registry = {
+    list: () => [entity, other],
+    insertBefore: (id, before) => {
+      changes.push(['order', id, before])
+      return ['w1', 'w2']
+    },
+  }
+  const server = await harness(dir, { registry })
+  try {
+    const pinned = await fetch(`${server.base}/dsh-leaf/workspace`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace: dir, action: 'pin' }),
+    })
+    assert.equal(pinned.status, 200)
+    assert.equal(entity.title, 'dsh-leaf')
+    assert.deepEqual(changes[0], ['title', 'dsh-leaf'])
+    assert.deepEqual(changes[1], ['order', 'w1', 'w2'])
+    const state = await (await fetch(`${server.base}/dsh-leaf/state?workspace=${encodeURIComponent(dir)}`)).json()
+    assert.equal(state.project.pinned, true)
+
+    const unpinned = await fetch(`${server.base}/dsh-leaf/workspace`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace: dir, action: 'unpin' }),
+    })
+    assert.equal(unpinned.status, 200)
+    assert.equal(entity.title, 'my-paper')
   } finally {
     await server.close()
     await rm(dir, { recursive: true, force: true })
