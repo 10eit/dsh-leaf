@@ -1362,6 +1362,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
       const workspaceItems = workspaces ?? []
       const activeWorkspace = workspaceItems.find((item) => item.path === activePath) ?? null
+      const redetectEnv = useCallback(async () => {
+        try {
+          const environmentPayload = await api('/env?force=1')
+          if (!alive.current) return
+          setState((previous) => (previous === null ? previous : { ...previous, environment: environmentPayload }))
+          setModal((previous) => (previous?.kind === 'env' ? { kind: 'env', environment: environmentPayload } : previous))
+        } catch (error) {
+          showToast(`${t('toast.error')}: ${error.message}`)
+        }
+      }, [t])
+
       const project = state?.project ?? null
       const environment = state?.environment ?? null
       const receipt = build.receipt ?? null
@@ -1385,7 +1396,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const match = workspaceItems.find((item) => activeSessionCwd === item.path
           || activeSessionCwd.startsWith(`${item.path}/`))
         if (match !== undefined && match.path !== activePath) setActivePath(match.path)
-      }, [activeSessionCwd])
+      }, [activeSessionCwd, workspaceItems.map((item) => item.path).join('|')])
 
       useEffect(() => {
         if (activePath !== '') writeStored(STORAGE.workspace, activePath)
@@ -2097,6 +2108,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           onInit: initTemplate,
           onPatch: patchProject,
           onProbe: runProbe,
+          onRedetect: redetectEnv,
         }),
       )
     }
@@ -2229,7 +2241,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function EnvironmentModal({ modal, environment, onClose, onProbe, t }) {
+    function EnvironmentModal({ modal, environment, onClose, onProbe, onRedetect, t }) {
       const current = modal.environment ?? environment
       const probing = modal.probing === true
       const status = current?.status ?? 'missing'
@@ -2239,6 +2251,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         subtitle: current?.distribution ?? '',
         onClose,
         actions: [
+          h('button', { key: 'd', type: 'button', className: 'leaf-btn', onClick: onRedetect, disabled: probing }, t('env.redetect')),
           h('button', { key: 'p', type: 'button', className: 'leaf-btn primary', onClick: onProbe, disabled: probing }, probing ? [h('span', { key: 's', className: 'leaf-spin' }), t('env.probing')] : t('env.probe')),
           h('button', { key: 'c', type: 'button', className: 'leaf-btn', onClick: onClose }, t('modal.close')),
         ],
