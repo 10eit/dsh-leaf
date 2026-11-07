@@ -24,8 +24,8 @@ window.__ModuleLoader__.load({
       drawer: 'dsh-leaf.drawer',
     }
     const PANEL_ID = 'leaf'
+    const WORKBENCH_TITLE = 'DSH-leaf 工作台'
     const MENU_OPEN = 'dsh-leaf.open'
-    const MENU_CLOSE = 'dsh-leaf.close'
 
     /* ------------------------------------------------------------------ */
     /* Dictionaries                                                        */
@@ -36,6 +36,10 @@ window.__ModuleLoader__.load({
       'panel.open': '打开 dsh-leaf',
       'menu.open': '在 dsh-leaf 中打开',
       'menu.close': '关闭 dsh-leaf',
+      'menu.enableWorkbench': '启用 DSH-leaf 工作台',
+      'menu.disableWorkbench': '关闭 DSH-leaf 工作台',
+      'menu.workbenchEnabled': '已启用 DSH-leaf 工作台：工作区已置顶，入口会话已固定。',
+      'menu.workbenchClosed': '已关闭 DSH-leaf 工作台；项目文件与会话保留。',
       'menu.disabled': '已关闭此工作区的 dsh-leaf；项目文件与会话保持不变。',
       'menu.copySnippet': '复制 LaTeX 插入片段',
       'menu.copySnippetDone': '已复制 LaTeX 插入片段，可粘贴到章节文件中。',
@@ -228,6 +232,10 @@ window.__ModuleLoader__.load({
       'panel.open': 'Open dsh-leaf',
       'menu.open': 'Open in dsh-leaf',
       'menu.close': 'Close dsh-leaf',
+      'menu.enableWorkbench': 'Enable the DSH-leaf workbench',
+      'menu.disableWorkbench': 'Close the DSH-leaf workbench',
+      'menu.workbenchEnabled': 'DSH-leaf workbench enabled: workspace pinned and entry session fixed.',
+      'menu.workbenchClosed': 'DSH-leaf workbench closed; project files and sessions are retained.',
       'menu.disabled': 'dsh-leaf is off for this workspace. Project files and sessions are unchanged.',
       'menu.copySnippet': 'Copy LaTeX include snippet',
       'menu.copySnippetDone': 'The LaTeX include snippet is copied.',
@@ -420,7 +428,7 @@ window.__ModuleLoader__.load({
     /* ------------------------------------------------------------------ */
 
     const CSS = `
-.leaf-root{display:flex;flex-direction:column;height:100%;flex:1;width:100%;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-body,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif);font-size:13px;line-height:1.45}
+.leaf-root{display:flex;flex-direction:column;height:100%;flex:1;width:100%;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-body,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif);font-size:14px;line-height:1.45}
 .leaf-root *{box-sizing:border-box}
 .leaf-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l1);flex-wrap:wrap;background:var(--dsw-alias-bg-base);flex:none}
 .leaf-toolbar.second{padding-top:0;border-bottom:1px solid var(--dsw-alias-border-l1);gap:10px}
@@ -430,20 +438,20 @@ window.__ModuleLoader__.load({
 .leaf-brand{display:flex;align-items:center;gap:7px;font-weight:600;letter-spacing:.2px;margin-right:4px}
 .leaf-brand svg{display:block}
 .leaf-spacer{flex:1}
-.leaf-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;transition:background .12s ease,border-color .12s ease}
+.leaf-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:30px;padding:0 11px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;transition:background .12s ease,border-color .12s ease}
 .leaf-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3)}
 .leaf-btn:disabled{opacity:.5;cursor:not-allowed}
 .leaf-btn.primary{background:var(--dsw-alias-button-primary-fill);border-color:transparent;color:var(--dsw-alias-label-primary-inverted);font-weight:600}
 .leaf-btn.primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}
 .leaf-btn.ghost{border-color:transparent;background:transparent}
 .leaf-btn.ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
-.leaf-btn.icon{width:28px;padding:0}
-.leaf-btn.small{height:24px;padding:0 7px;font-size:11px;border-radius:6px}
+.leaf-btn.icon{width:30px;padding:0}
+.leaf-btn.small{height:26px;padding:0 8px;font-size:12px;border-radius:6px}
 .leaf-btn.danger{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l2)}
-.leaf-select{height:28px;max-width:230px;padding:0 7px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;cursor:pointer}
+.leaf-select{height:30px;max-width:230px;padding:0 8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer}
 .leaf-select:focus-visible,.leaf-btn:focus-visible,.leaf-input:focus-visible,.leaf-textarea:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
-.leaf-field{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
-.leaf-chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:999px;font-size:11px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap}
+.leaf-field{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
+.leaf-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:999px;font-size:12px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap}
 .leaf-chip:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-chip.ok{color:var(--dsw-alias-label-primary);border-color:color-mix(in srgb,var(--dsw-alias-brand-primary) 40%,var(--dsw-alias-border-l2))}
 .leaf-chip.bad{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l3)}
@@ -457,10 +465,10 @@ window.__ModuleLoader__.load({
 .leaf-file-mask{position:fixed;inset:0;z-index:70;background:rgba(20,24,28,.28);display:flex;align-items:center;justify-content:center;padding:24px}
 .leaf-file-panel{width:min(420px,calc(100vw - 48px));height:min(620px,78vh);max-height:78vh;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
 .leaf-file-panel .leaf-tree{width:100%;max-width:none;border-right:0;flex:1;min-height:0}
-.leaf-pane-head{display:flex;align-items:center;gap:5px;height:34px;padding:0 7px 0 10px;border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}
+.leaf-pane-head{display:flex;align-items:center;gap:6px;height:36px;padding:0 8px 0 11px;border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;color:var(--dsw-alias-label-secondary);font-size:13px;font-weight:600}
 .leaf-pane-head .leaf-spacer{flex:1}
 .leaf-tree-scroll{flex:1;overflow:auto;padding:4px 0 16px;min-height:0}
-.leaf-row{display:flex;align-items:center;gap:5px;height:24px;padding-right:8px;cursor:pointer;border-radius:5px;margin:0 4px;user-select:none;color:var(--dsw-alias-label-primary);font-size:12.5px;white-space:nowrap}
+.leaf-row{display:flex;align-items:center;gap:6px;height:27px;padding-right:8px;cursor:pointer;border-radius:5px;margin:0 4px;user-select:none;color:var(--dsw-alias-label-primary);font-size:13.5px;white-space:nowrap}
 .leaf-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-row.active{background:var(--dsw-alias-interactive-bg-active,var(--dsw-alias-bg-layer-2))}
 .leaf-row .leaf-name{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
@@ -468,12 +476,12 @@ window.__ModuleLoader__.load({
 .leaf-row:hover .leaf-row-actions{display:flex}
 .leaf-caret{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex:none;color:var(--dsw-alias-label-tertiary);transition:transform .12s ease}
 .leaf-caret.open{transform:rotate(90deg)}
-.leaf-ext{width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex:none;letter-spacing:-.2px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace}
+.leaf-ext{width:18px;height:18px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex:none;letter-spacing:-.2px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace}
 .leaf-ext.tex{background:#e7f2ea;color:#1f7a4d}.leaf-ext.bib{background:#f3eee2;color:#8a6a1f}.leaf-ext.img{background:#e9eefb;color:#3a5fb0}.leaf-ext.pdf{background:#fbe9e7;color:#b0453a}.leaf-ext.code{background:#eef0f4;color:#5a6472}
-.leaf-tree-hint{padding:10px;color:var(--dsw-alias-label-tertiary);font-size:12px}
+.leaf-tree-hint{padding:10px 12px;color:var(--dsw-alias-label-tertiary);font-size:13px}
 .leaf-editor-col{display:flex;flex-direction:column;flex:1;min-width:280px;min-height:0;background:var(--dsw-alias-bg-base)}
-.leaf-tabs{display:flex;align-items:stretch;height:34px;border-bottom:1px solid var(--dsw-alias-border-l1);overflow-x:auto;flex:none;background:var(--dsw-alias-bg-base);scrollbar-width:thin}
-.leaf-tab{display:flex;align-items:center;gap:6px;padding:0 8px 0 12px;max-width:220px;border-right:1px solid var(--dsw-alias-border-l1);font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;position:relative;flex:none}
+.leaf-tabs{display:flex;align-items:stretch;height:36px;border-bottom:1px solid var(--dsw-alias-border-l1);overflow-x:auto;flex:none;background:var(--dsw-alias-bg-base);scrollbar-width:thin}
+.leaf-tab{display:flex;align-items:center;gap:6px;padding:0 9px 0 13px;max-width:240px;border-right:1px solid var(--dsw-alias-border-l1);font-size:13px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;position:relative;flex:none}
 .leaf-tab.active{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1)}
 .leaf-tab.active:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--dsw-alias-brand-primary)}
 .leaf-tab .leaf-name{overflow:hidden;text-overflow:ellipsis;max-width:150px}
@@ -482,24 +490,24 @@ window.__ModuleLoader__.load({
 .leaf-tab .leaf-close:hover{opacity:1;background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-editor-wrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
 .leaf-editor{position:relative;flex:1;min-height:0;display:flex;background:var(--dsw-alias-bg-base);overflow:hidden}
-.leaf-gutter{width:50px;flex:none;overflow:hidden;border-right:1px solid var(--dsw-alias-border-l1);position:relative;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:12px;line-height:20px;user-select:none}
+.leaf-gutter{width:50px;flex:none;overflow:hidden;border-right:1px solid var(--dsw-alias-border-l1);position:relative;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;line-height:22px;user-select:none}
 .leaf-gutter-inner{position:absolute;top:8px;left:0;right:0;will-change:transform}
-.leaf-lineno{height:20px;padding:0 8px 0 0;text-align:right;white-space:nowrap}
+.leaf-lineno{height:22px;padding:0 8px 0 0;text-align:right;white-space:nowrap}
 .leaf-lineno.current{color:var(--dsw-alias-label-primary)}
 .leaf-code{position:relative;flex:1;min-width:0;overflow:hidden}
-.leaf-highlight{position:absolute;top:8px;left:12px;right:12px;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;line-height:20px;white-space:pre;will-change:transform;color:var(--dsw-alias-label-primary)}
-.leaf-line{position:absolute;left:0;white-space:pre;height:20px}
-.leaf-textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;padding:8px 12px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;line-height:20px;white-space:pre;overflow:auto;color:transparent;caret-color:var(--dsw-alias-label-primary);tab-size:2;scrollbar-width:thin}
+.leaf-highlight{position:absolute;top:8px;left:12px;right:12px;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre;will-change:transform;color:var(--dsw-alias-label-primary)}
+.leaf-line{position:absolute;left:0;white-space:pre;height:22px}
+.leaf-textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;padding:8px 12px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre;overflow:auto;color:transparent;caret-color:var(--dsw-alias-label-primary);tab-size:2;scrollbar-width:thin}
 .leaf-textarea.composing{color:var(--dsw-alias-label-primary)}
 .leaf-textarea::selection{background:var(--dsw-alias-bg-document-selection,#b9d7ff);color:transparent}
 .leaf-tok-cmd{color:#8a3fb0}.leaf-tok-comment{color:var(--dsw-alias-label-tertiary);font-style:italic}.leaf-tok-math{color:#1f6fb2}.leaf-tok-brace{color:var(--dsw-alias-label-secondary)}.leaf-tok-env{color:#1f7a4d}.leaf-tok-opt{color:#b06a1f}
 body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .leaf-tok-math{color:#8cc4f5}body[data-ds-dark-theme] .leaf-tok-env{color:#8fd9ae}body[data-ds-dark-theme] .leaf-tok-opt{color:#e8b877}
 .leaf-agent-dock{display:flex;flex-direction:column;flex:none;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-height:0}
-.leaf-agent-bar{display:flex;align-items:center;gap:8px;padding:0 10px;height:44px;flex:none}
-.leaf-agent-target{font-size:11px;color:var(--dsw-alias-label-tertiary);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.leaf-agent-bar{display:flex;align-items:center;gap:8px;padding:0 11px;height:48px;flex:none}
+.leaf-agent-target{font-size:12px;color:var(--dsw-alias-label-tertiary);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
 .leaf-agent-result{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--dsw-alias-border-l1)}
-.leaf-agent-result-head{display:flex;align-items:center;gap:6px;padding:4px 10px;flex:none;font-size:11.5px;color:var(--dsw-alias-label-tertiary);min-height:28px}
-.leaf-agent-result-body{margin:0;padding:8px 10px;overflow:auto;flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base)}
+.leaf-agent-result-head{display:flex;align-items:center;gap:6px;padding:5px 11px;flex:none;font-size:12.5px;color:var(--dsw-alias-label-tertiary);min-height:28px}
+.leaf-agent-result-body{margin:0;padding:9px 11px;overflow:auto;flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base)}
 .leaf-agent-result-body.error{color:var(--dsw-alias-state-error-primary,#c0463f)}
 .leaf-agent-body{display:flex;flex-direction:column;gap:6px;padding:6px 10px 10px;flex:1;min-height:0}
 .leaf-agent-input{flex:1;min-height:54px;resize:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:7px 9px;font:inherit;font-size:12.5px;line-height:1.5;outline:none}
@@ -507,17 +515,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-agent-actions{display:flex;align-items:center;gap:8px;flex:none}
 .leaf-agent-context{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);overflow:hidden;white-space:nowrap}
 .leaf-agent-context code{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--dsw-alias-bg-layer-2);padding:1px 4px;border-radius:4px;color:var(--dsw-alias-label-secondary)}
-.leaf-statusbar{display:flex;align-items:center;gap:10px;height:26px;padding:0 10px;border-top:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-tertiary);font-size:11.5px;flex:none;background:var(--dsw-alias-bg-base)}
+.leaf-statusbar{display:flex;align-items:center;gap:10px;height:28px;padding:0 11px;border-top:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-tertiary);font-size:12.5px;flex:none;background:var(--dsw-alias-bg-base)}
 .leaf-statusbar .leaf-spacer{flex:1}
 .leaf-find{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none}
-.leaf-input{height:28px;padding:0 8px;border-radius:6px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;min-width:0}
+.leaf-input{height:30px;padding:0 9px;border-radius:6px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;min-width:0}
 .leaf-input.grow{flex:1}
-.leaf-banner{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;flex:none}
+.leaf-banner{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:13px;flex:none}
 .leaf-banner .leaf-spacer{flex:1}
 .leaf-banner.warn{background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 80%,#d99a2b 20%)}
 .leaf-banner.bad{background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 80%,#d9534f 20%)}
 .leaf-paper{display:flex;flex-direction:column;min-width:240px;max-width:70%;border-left:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:0 1 auto}
-.leaf-paper-tools{display:flex;align-items:center;gap:4px;padding:4px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base);flex:none;font-size:11px;color:var(--dsw-alias-label-secondary)}
+.leaf-paper-tools{display:flex;align-items:center;gap:4px;padding:5px 9px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base);flex:none;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .leaf-paper-body{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-layer-2)}
 .leaf-paper-body iframe{width:100%;height:100%;border:0;display:block;background:#fff}
 .leaf-paper-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:12px}
@@ -526,8 +534,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-resizer:after{content:"";position:absolute;top:0;bottom:0;left:2px;width:1px;background:transparent;transition:background .12s}
 .leaf-resizer:hover:after{background:var(--dsw-alias-brand-primary)}
 .leaf-log{display:flex;flex-direction:column;flex:none;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-height:0}
-.leaf-log-head{display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 10px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:12px;color:var(--dsw-alias-label-secondary);flex:none}
-.leaf-log-body{flex:1;min-height:0;overflow:auto;padding:6px 10px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-secondary)}
+.leaf-log-head{display:flex;align-items:center;gap:6px;height:32px;padding:0 9px 0 11px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:13px;color:var(--dsw-alias-label-secondary);flex:none}
+.leaf-log-body{flex:1;min-height:0;overflow:auto;padding:7px 11px 11px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-secondary)}
 .leaf-problem{display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-radius:5px;cursor:pointer;font-family:inherit;white-space:normal}
 .leaf-problem:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-problem .leaf-where{color:var(--dsw-alias-label-tertiary);flex:none;font-family:ui-monospace,Menlo,monospace;font-size:11px}
@@ -541,16 +549,16 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-preview-meta .leaf-spacer{flex:1}
 .leaf-overlay{position:absolute;inset:0;background:color-mix(in srgb,var(--dsw-alias-bg-base) 70%,transparent);display:flex;align-items:center;justify-content:center;z-index:5;padding:24px}
 .leaf-card{max-width:520px;width:100%;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:14px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.16)}
-.leaf-card h2{margin:0 0 8px;font-size:16px;line-height:1.35}
-.leaf-card p{margin:0 0 14px;color:var(--dsw-alias-label-secondary);font-size:12.5px;line-height:1.65}
+.leaf-card h2{margin:0 0 8px;font-size:17px;line-height:1.35}
+.leaf-card p{margin:0 0 14px;color:var(--dsw-alias-label-secondary);font-size:13.5px;line-height:1.65}
 .leaf-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .leaf-modal-mask{position:fixed;inset:0;background:rgba(20,24,28,.35);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px}
 .leaf-modal{width:min(520px,100%);max-height:86vh;overflow:auto;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.28);padding:18px 20px 16px}
-.leaf-modal h3{margin:0 0 4px;font-size:15px}
-.leaf-modal .leaf-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;margin-bottom:14px}
+.leaf-modal h3{margin:0 0 4px;font-size:16px}
+.leaf-modal .leaf-sub{color:var(--dsw-alias-label-tertiary);font-size:13px;margin-bottom:14px}
 .leaf-form{display:flex;flex-direction:column;gap:10px}
-.leaf-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dsw-alias-label-secondary)}
-.leaf-form .leaf-hint{font-size:11px;color:var(--dsw-alias-label-tertiary)}
+.leaf-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dsw-alias-label-secondary)}
+.leaf-form .leaf-hint{font-size:12px;color:var(--dsw-alias-label-tertiary)}
 .leaf-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .leaf-switch{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);user-select:none}
 .leaf-switch input{display:none}
@@ -567,7 +575,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-radio .leaf-radio-body{display:flex;flex-direction:column;gap:2px;min-width:0}
 .leaf-radio .leaf-radio-title{font-size:12.5px;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .leaf-radio .leaf-radio-sub{font-size:11px;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.leaf-kv{display:grid;grid-template-columns:112px 1fr;gap:6px 10px;font-size:12px}
+.leaf-kv{display:grid;grid-template-columns:120px 1fr;gap:7px 10px;font-size:13px}
 .leaf-kv dt{color:var(--dsw-alias-label-tertiary)}
 .leaf-kv dd{margin:0;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere}
 .leaf-kv code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--dsw-alias-bg-layer-2);padding:1px 4px;border-radius:4px}
@@ -739,49 +747,19 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
     const boolStored = (raw, fallback) => (raw === true || raw === '1' ? true : raw === false || raw === '0' ? false : fallback)
 
-    /** Workspace paths the user pinned as dsh-leaf entries (client-side mirror). */
-    function pinnedPaths() {
-      try {
-        const parsed = JSON.parse(readStored('dsh-leaf.pinnedPaths', '[]'))
-        return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []
-      } catch {
-        return []
-      }
-    }
-    function setPinnedPath(path, pinned) {
-      const next = new Set(pinnedPaths())
-      if (pinned) next.add(path)
-      else next.delete(path)
-      writeStored('dsh-leaf.pinnedPaths', JSON.stringify([...next]))
-    }
-
     /**
-     * Invisible shell watcher: entering a pinned workspace through a blank
-     * session opens the writing view, while new sessions inside that workspace
-     * keep the native conversation.
+     * Invisible shell watcher: activating the pinned workbench Session opens the
+     * writing view, while activating any other Session leaves the conversation.
      */
-    function PinnedWorkspaceOpener({ useSessions, useWorkspaces, usePanelInfo, open }) {
+    function WorkbenchOpener({ useSessions, usePanelInfo, open }) {
       const active = useSessions((snapshot) => Object.values(snapshot.byId ?? {})
         .find((item) => (item.retainedBy?.mainView ?? 0) > 0) ?? null)
-      const items = useWorkspaces((snapshot) => snapshot.items)
       const panelId = usePanelInfo((info) => info.activePanelId)
-      const lastWorkspace = useRef(null)
       useEffect(() => {
-        const cwd = active?.cwd
-        if (typeof cwd !== 'string' || cwd === '') return
-        const workspace = items.find((item) => cwd === item.path || cwd.startsWith(`${item.path}/`))
-        if (workspace === undefined) return
-        if (lastWorkspace.current === null) {
-          lastWorkspace.current = workspace.path
-          return
-        }
-        if (lastWorkspace.current === workspace.path) return
-        lastWorkspace.current = workspace.path
         if (panelId === 'leaf') return
-        if (active?.blank !== true) return
-        if (!pinnedPaths().includes(workspace.path)) return
+        if (active?.title !== WORKBENCH_TITLE) return
         open()
-      }, [active?.id, active?.cwd, active?.blank, items, panelId, open])
+      }, [active?.id, active?.title, panelId, open])
       return null
     }
 
@@ -800,12 +778,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     function Chevron({ open }) {
-      return h('svg', { width: 12, height: 12, viewBox: '0 0 16 16', 'aria-hidden': true, className: `leaf-caret${open ? ' open' : ''}` },
+      return h('svg', { width: 14, height: 14, viewBox: '0 0 16 16', 'aria-hidden': true, className: `leaf-caret${open ? ' open' : ''}` },
         h('path', { d: 'M6 3.5 10.5 8 6 12.5', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }),
       )
     }
 
-    function Icon({ name, size = 14 }) {
+    function Icon({ name, size = 16 }) {
       const common = { width: size, height: size, viewBox: '0 0 16 16', 'aria-hidden': true, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }
       switch (name) {
         case 'refresh':
@@ -996,7 +974,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [cursor, setCursor] = useState({ line: 1, column: 1 })
       const content = tab?.content ?? ''
       const lines = useMemo(() => content.split('\n'), [content])
-      const lineHeight = 20
+      const lineHeight = 22
       const overscan = 10
 
       useEffect(() => {
@@ -1222,7 +1200,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               const toLine = fromLine + (selected.split('\n').length - 1)
               onSendToAgent?.({ path: tab.path, fromLine, toLine, text: selected })
             },
-          }, h(LeafMark, { size: 12 }), t('editor.toAgent')),
+          }, h(LeafMark, { size: 14 }), t('editor.toAgent')),
           h('button', {
             type: 'button',
             className: 'leaf-btn small ghost',
@@ -1289,7 +1267,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }
       return h('div', { className: 'leaf-tree', style: width === undefined ? undefined : { width } },
         h('div', { className: 'leaf-pane-head' },
-          h(Icon, { name: 'folder', size: 13 }),
+          h(Icon, { name: 'folder', size: 16 }),
           h('span', null, t('tree.title')),
           h('span', { className: 'leaf-spacer' }),
           h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus' })),
@@ -1514,6 +1492,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [paperWidth, onPaperResize] = useResizer(540, 260, 1000, STORAGE.paperWidth, true)
       const [saving, setSaving] = useState(null)
       const alive = useRef(true)
+      const autoOpenedRef = useRef('')
       const viewRef = useRef({ tabs, activeTabPath, expanded, preview, pdfPage })
       const tabsRef = useRef(tabs)
       const expandedRef = useRef(expanded)
@@ -1776,6 +1755,20 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const file = openRequest.file
         openFile({ path: file, name: basename(file), extension: extOf(file), mtime: 0, size: 0 })
       }, [workspacePath, openRequest?.at])
+
+      // A freshly opened workbench should not greet the user with an empty
+      // canvas: show the source of the PDF currently being rendered.
+      useEffect(() => {
+        if (workspacePath === null || state === null) return
+        if (tabs.length > 0 || activeTabPath !== null) return
+        if (openRequest?.file !== null && openRequest?.file !== undefined) return
+        const main = state.project?.mainDocument
+        if (typeof main !== 'string' || main === '') return
+        const key = `${workspacePath}::${main}`
+        if (autoOpenedRef.current === key) return
+        autoOpenedRef.current = key
+        openFile({ path: main, name: basename(main), extension: extOf(main), mtime: 0, size: 0 })
+      }, [workspacePath, state, tabs.length, activeTabPath, openRequest?.file, openFile])
 
       const updateTab = useCallback((path, content) => {
         setTabs((previous) => previous.map((tab) => (tab.path === path ? { ...tab, content } : tab)))
@@ -2166,10 +2159,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return h('div', { className: 'leaf-root' },
         h('div', { className: 'leaf-toolbar' },
           h('div', { className: 'leaf-brand', title: workspacePath ?? '' },
-            h(LeafMark, { size: 16 }),
+            h(LeafMark, { size: 18 }),
             h('span', null, 'dsh-leaf'),
-            h('span', { className: 'leaf-muted', style: { fontSize: 11, fontWeight: 400, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-              workspacePath === null ? '' : basename(workspacePath)),
           ),
           h('button', {
             type: 'button',
@@ -2327,7 +2318,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   ),
             h('div', { className: 'leaf-agent-dock', style: { height: assist === null ? 44 : 248 } },
               h('div', { className: 'leaf-agent-bar' },
-                h(LeafMark, { size: 14 }),
+                h(LeafMark, { size: 16 }),
                 h('span', { className: 'leaf-agent-target', title: activeTab?.path ?? '' },
                   activeTab === null ? t('agent.noFile') : `${activeTab.name}${selection === null ? '' : ` · ${selection.fromLine}-${selection.toLine}`}`),
                 h('input', {
@@ -2404,7 +2395,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             onFixWithAgent: fixWithAgent,
           }),
           drawerOpen
-            ? h('div', { className: 'leaf-drawer' },
+            ? h('div', { className: 'leaf-drawer', style: { bottom: assist === null ? 44 : 248 } },
                 h(FileTree, {
                   dirs,
                   expanded,
@@ -2731,6 +2722,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }
 
+      guarded('overlay-inject', () => ctx.slots.inject('shell.overlay', () => guarded('overlay-register', () => ctx.slots.register({
+        name: 'shell.overlay',
+        id: 'dsh-leaf.workbench-opener',
+        inject: () => ({ open: () => ctx.layout.selectPanel('leaf') }),
+      }, WorkbenchOpener))))
+
       guarded('locale', () => ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-leaf: dictionaries'))
       guarded('styles', () => ctx.effect(() => installStyles(), 'dsh-leaf: styles'))
 
@@ -2761,45 +2758,40 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         key: MENU_OPEN,
       }, MenuLeafIcon))))
 
-      guarded('menu-open', () => ctx.effect(() => ctx.contextMenus.register({
+      guarded('menu-workbench', () => ctx.effect(() => ctx.contextMenus.register({
         id: MENU_OPEN,
         target: 'workspace',
         order: 150,
-        resolve: (target) => [{
-          id: 'open',
-          label: t('menu.open'),
-          icon: { key: MENU_OPEN },
-          run: async () => {
-            try {
-              await api('/workspace', { body: { workspace: target.path, action: 'pin' } })
-              setPinnedPath(target.path, true)
-            } catch (error) {
-              console.error('[dsh-leaf] pin workspace failed', error)
-            }
-            openLeaf(target.path)
-          },
-        }],
-      })), 'dsh-leaf: workspace menu action')
-
-      guarded('menu-close', () => ctx.effect(() => ctx.contextMenus.register({
-        id: MENU_CLOSE,
-        target: 'workspace',
-        order: 160,
-        resolve: (target) => [{
-          id: 'close',
-          label: t('menu.close'),
-          run: async () => {
-            try {
-              await api('/workspace', { body: { workspace: target.path, action: 'unpin' } })
-              setPinnedPath(target.path, false)
-              await api('/state', { body: { workspace: target.path, patch: { enabled: false } } })
-              ctx.contextMenus.notify(t('menu.disabled'), true)
-            } catch (error) {
-              ctx.contextMenus.notify(`${t('toast.error')}: ${error.message}`, false)
-            }
-          },
-        }],
-      })), 'dsh-leaf: workspace close action')
+        resolve: async (target) => {
+          let pinned = false
+          try {
+            const payload = await api(`/state?${workspaceQuery(target.path)}`)
+            pinned = payload?.project?.pinned === true
+          } catch {
+            // unreadable project: offer the enable action
+          }
+          return [{
+            id: 'toggle',
+            label: pinned ? t('menu.disableWorkbench') : t('menu.enableWorkbench'),
+            icon: { key: MENU_OPEN },
+            run: async () => {
+              try {
+                const payload = await api('/workbench', {
+                  body: { workspace: target.path, action: pinned ? 'close' : 'ensure' },
+                })
+                ctx.contextMenus.notify(pinned ? t('menu.workbenchClosed') : t('menu.workbenchEnabled'), true)
+                if (pinned === false) {
+                  const sessionId = payload?.workbench?.sessionId
+                  if (typeof sessionId === 'string') ctx.uiWorkspace.openSession(sessionId)
+                  openLeaf(target.path)
+                }
+              } catch (error) {
+                ctx.contextMenus.notify(`${t('toast.error')}: ${error.message}`, false)
+              }
+            },
+          }]
+        },
+      })), 'dsh-leaf: workspace workbench toggle')
 
       const workspaceOfSession = (sessionId) => {
         const session = ctx.sessions?.list?.getSnapshot?.()?.byId?.[sessionId]

@@ -90,7 +90,6 @@ test('client bundle registers the writing panel and renders', { skip: renderer =
   assert.ok(registrations.includes('sidebar.panellist'))
   assert.ok(registrations.includes('contextMenu.icon'))
   assert.deepEqual(menus.map((menu) => menu.id).sort(), [
-    'dsh-leaf.close',
     'dsh-leaf.file-latex',
     'dsh-leaf.file-open',
     'dsh-leaf.open',

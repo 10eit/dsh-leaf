@@ -41,6 +41,7 @@ async function harness(root, options = {}) {
     config: { enabledByDefault: true, engine: 'xelatex', autoCompile: true },
     builds: new BuildManager({ ctx }),
     ...(options.assist === undefined ? {} : { assist: options.assist }),
+    ...(options.workbench === undefined ? {} : { workbench: options.workbench }),
   }
   registerLeafRoutes(ctx, leaf)
   assert.ok(route !== null)
@@ -202,6 +203,46 @@ test('pinning renames and reorders the workspace, unpinning restores the title',
     })
     assert.equal(unpinned.status, 200)
     assert.equal(entity.title, 'my-paper')
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('the workbench route creates and closes the pinned session', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-workbench-'))
+  const calls = []
+  const server = await harness(dir, {
+    workbench: {
+      ensure: async (workspace) => {
+        calls.push(['ensure', workspace])
+        return { sessionId: 'session-test', created: true }
+      },
+      close: async (workspace) => {
+        calls.push(['close', workspace])
+        return { closed: true }
+      },
+    },
+  })
+  try {
+    const ensure = await fetch(`${server.base}/dsh-leaf/workbench`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace: dir, action: 'ensure' }),
+    })
+    assert.equal(ensure.status, 200)
+    const payload = await ensure.json()
+    assert.equal(payload.workbench.sessionId, 'session-test')
+    assert.equal(calls[0][0], 'ensure')
+
+    const close = await fetch(`${server.base}/dsh-leaf/workbench`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace: dir, action: 'close' }),
+    })
+    assert.equal(close.status, 200)
+    assert.equal((await close.json()).workbench.closed, true)
+    assert.equal(calls[1][0], 'close')
   } finally {
     await server.close()
     await rm(dir, { recursive: true, force: true })
