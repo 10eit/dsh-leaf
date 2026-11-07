@@ -51,6 +51,8 @@ Warnings (4): ctex 的 LaTeX release 提示（不影响产物）
 
 产物：`.dsh-leaf/build/full/main.pdf`（2 页）。警告是 ctex 对 LaTeX release 日期的提示，不是排版错误。
 
+另外验证了「主文档位于子目录」的默认工作目录规则：以仓库根目录为工作区、主文档为 `examples/paper/main.tex` 时，构建 cwd 自动取 `examples/paper`，输出仍写入根目录 `.dsh-leaf/build/full/main.pdf`，编译成功。
+
 ### 2.2 SyncTeX
 
 ```text
@@ -69,20 +71,20 @@ xelatex / pdflatex / latexmk / bibtex / biber / tlmgr / synctex: 全部找到
 
 ## 3. Client 半
 
-`dsh-client-modules` 的 boot graph 包含：
+`dsh-client-modules` 的 boot graph 包含 dsh-leaf，且位于 `application` batch（与其它客户端插件同批加载）：
 
 ```json
-{"id":"dsh-leaf","url":"plugins/??dsh-leaf/client.js&rev=0821d30aef47","rev":"0821d30aef47"}
+{"id":"dsh-leaf","url":"plugins/??dsh-leaf/client.js&rev=<artifact rev>","rev":"<artifact rev>"}
 ```
 
-且 dsh-leaf 位于 `application` batch（与其它客户端插件同批加载）。使用图中的精确 rev 取回 bundle：
+rev 由 `client.js` 的 mtime/ctime/size 计算，每次保存都会变化；`latex_project(action="diagnostics")` 可读取当前 graph。用图中的精确 rev 取回 bundle：
 
 ```text
-GET /plugins/??dsh-leaf/client.js&rev=0821d30aef47
-→ 200, text/javascript, 121035 bytes
+GET /plugins/??dsh-leaf/client.js&rev=<artifact rev>
+→ 200, text/javascript, ~120 KB
 ```
 
-bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，内容包含最新代码（`paper.exportFailed`、`jump` 定位等）。
+bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，可检索到最新代码标记（`paper.exportFailed`、`editor.toAgent`、`log.fixAgent` 等）。
 
 ### 3.1 无浏览器环境下的替代验证
 
@@ -106,13 +108,14 @@ bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，内�
 
 ```text
 $ npm test
-# tests 17
-# pass 17
+# tests 18
+# pass 18
 # fail 0
 ```
 
 覆盖：
 
+- 客户端 bundle：加载 `client.js`、校验 `__ModuleLoader__` 工厂、apply 注册项（main / 侧栏 / 右键 / 快捷键）与空/有工作区两种面板渲染；
 - 路径围栏、主文档识别与候选歧义、项目记录持久化与显式关闭；
 - 文件树隐藏规则、文本读写与外部修改冲突；
 - 模板只增不覆盖、新建 TeX 文件拒绝覆盖；
