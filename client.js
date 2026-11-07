@@ -491,10 +491,10 @@ window.__ModuleLoader__.load({
 .leaf-editor-wrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
 .leaf-editor{position:relative;flex:1;min-height:0;display:flex;background:var(--dsw-alias-bg-base);overflow:hidden}
 .leaf-highlight{position:absolute;top:0;left:0;right:0;padding-top:8px;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;will-change:transform;color:var(--dsw-alias-label-primary);background:linear-gradient(to right,var(--dsw-alias-bg-layer-1) 0 50px,transparent 50px);tab-size:2}
-.leaf-flow-row{display:grid;grid-template-columns:50px 1fr;align-items:start;box-sizing:border-box}
+.leaf-flow-row{display:grid;grid-template-columns:50px minmax(0,1fr);align-items:start;box-sizing:border-box}
 .leaf-lineno{box-sizing:border-box;height:22px;line-height:22px;padding:0 8px 0 0;text-align:right;white-space:nowrap;color:var(--dsw-alias-label-tertiary);user-select:none;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l1)}
 .leaf-lineno.current{color:var(--dsw-alias-label-primary)}
-.leaf-line{box-sizing:border-box;padding:0 12px;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;min-height:22px}
+.leaf-line{box-sizing:border-box;min-width:0;padding:0 12px;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;min-height:22px}
 .leaf-textarea{box-sizing:border-box;position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;padding:8px 12px 8px 62px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;overflow-y:auto;overflow-x:hidden;color:transparent;caret-color:var(--dsw-alias-label-primary);tab-size:2;scrollbar-width:none}
 .leaf-textarea::-webkit-scrollbar{width:0;height:0}
 .leaf-textarea.composing{color:var(--dsw-alias-label-primary)}
@@ -997,6 +997,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /** Virtualized textarea editor with a themed syntax layer. */
     function LatexEditor({ tab, jump, selection, workspace, onChange, onSave, onCompile, onSelectionChange, t }) {
       const textareaRef = useRef(null)
+      const highlightRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
       const [composition, setComposition] = useState(false)
       const scrollKey = workspace === null || workspace === undefined || tab?.path === undefined ? null : `${workspace}::${tab.path}`
@@ -1039,7 +1040,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         for (let cursor = 0; cursor < index; cursor += 1) offset += lines[cursor].length + 1
         node.focus()
         node.setSelectionRange(offset, offset + lines[index].length)
-        const top = Math.max(0, index * lineHeight - 80)
+        const row = highlightRef.current?.children[index]
+        const top = Math.max(0, (row?.offsetTop ?? index * lineHeight) - 80)
         node.scrollTop = top
         setScrollTop(top)
         updateCursor()
@@ -1092,7 +1094,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         node.focus()
         node.setSelectionRange(index, index + findText.length)
         const line = tab.content.slice(0, index).split('\n').length
-        node.scrollTop = Math.max(0, (line - 4) * lineHeight)
+        const row = highlightRef.current?.children[line - 1]
+        const top = Math.max(0, (row?.offsetTop ?? (line - 4) * lineHeight) - 80)
+        node.scrollTop = top
+        setScrollTop(top)
         updateCursor()
       }
 
@@ -1177,7 +1182,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
         return nodes
       }
-      const rows = lines.map((line, index) => h('div', { key: index, className: 'leaf-flow-row' },
+      const rows = lines.map((line, index) => h('div', { key: index, className: 'leaf-flow-row', 'data-line': index },
         h('div', { className: `leaf-lineno${cursor.line === index + 1 ? ' current' : ''}` }, String(index + 1)),
         h('div', { className: 'leaf-line' }, renderTokens(tokenizeLine(line), index)),
       ))
@@ -1201,6 +1206,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         ) : null,
         h('div', { className: 'leaf-editor' },
           h('div', {
+            ref: highlightRef,
             className: 'leaf-highlight',
             style: { transform: `translateY(${-scrollTop}px)` },
           }, rows),
