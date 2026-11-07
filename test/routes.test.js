@@ -40,6 +40,7 @@ async function harness(root, options = {}) {
   const leaf = {
     config: { enabledByDefault: true, engine: 'xelatex', autoCompile: true },
     builds: new BuildManager({ ctx }),
+    ...(options.assist === undefined ? {} : { assist: options.assist }),
   }
   registerLeafRoutes(ctx, leaf)
   assert.ok(route !== null)
@@ -114,6 +115,46 @@ test('client activation diagnostics are appended to the host log', async () => {
     assert.equal(response.status, 200)
     const log = await readFile(path.join(tmpdir(), 'dsh-leaf-client-errors.log'), 'utf8')
     assert.ok(log.includes('"stage":"test-stage"'))
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('the background assist route forwards context and returns text', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-assist-'))
+  let captured = null
+  const server = await harness(dir, {
+    assist: async (request) => {
+      captured = request
+      return { text: '\\section{Tightened}', provider: 'p', model: 'm' }
+    },
+  })
+  try {
+    await writeFile(path.join(dir, 'main.tex'), '\\documentclass{article}\n', 'utf8')
+    const response = await fetch(`${server.base}/dsh-leaf/assist`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workspace: dir,
+        path: 'main.tex',
+        content: '\\section{Intro}\n',
+        instruction: 'tighten this',
+        selection: { text: '\\section{Intro}', fromLine: 1, toLine: 1, start: 0, end: 14 },
+      }),
+    })
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), { text: '\\section{Tightened}', provider: 'p', model: 'm' })
+    assert.equal(captured.instruction, 'tighten this')
+    assert.equal(captured.selection, '\\section{Intro}')
+    assert.equal(captured.file, 'main.tex')
+
+    const empty = await fetch(`${server.base}/dsh-leaf/assist`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace: dir, instruction: '   ' }),
+    })
+    assert.equal(empty.status, 400)
   } finally {
     await server.close()
     await rm(dir, { recursive: true, force: true })

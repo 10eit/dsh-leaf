@@ -18,13 +18,10 @@ window.__ModuleLoader__.load({
       workspace: 'dsh-leaf.workspace',
       engine: 'dsh-leaf.engine',
       mode: 'dsh-leaf.mode',
-      treeWidth: 'dsh-leaf.treeWidth',
       paperWidth: 'dsh-leaf.paperWidth',
       showHidden: 'dsh-leaf.showHidden',
       showAux: 'dsh-leaf.showAux',
-      logOpen: 'dsh-leaf.logOpen',
       drawer: 'dsh-leaf.drawer',
-      agentOpen: 'dsh-leaf.agentOpen',
     }
     const PANEL_ID = 'leaf'
     const MENU_OPEN = 'dsh-leaf.open'
@@ -104,6 +101,17 @@ window.__ModuleLoader__.load({
       'agent.noFile': '未打开文件',
       'agent.noSelection': '未选择文本（将使用当前文件）',
       'agent.hint': '⌘↵ 发送；Agent 会在原生会话中继续，聊天记录仍由宿主管理。',
+      'agent.placeholderShort': '让 Writing Agent 修改当前文件或选区，回车发送',
+      'agent.result': '结果',
+      'agent.running': '生成中…',
+      'agent.applySelection': '替换选区',
+      'agent.append': '追加到文件末尾',
+      'agent.copy': '复制',
+      'agent.close': '关闭',
+      'agent.stale': '原文已变化，建议已过期；请复制结果或重新生成。',
+      'agent.applied': '已写入文件，等待自动保存与编译。',
+      'agent.emptyInstruction': '先写一句修改要求。',
+      'agent.failed': '生成失败',
       'editor.copied': '已复制引用，可粘贴到对话中。',
       'editor.locateFailed': '定位失败：请重新完整编译后再试。',
       'paper.title': '论文 PDF',
@@ -285,6 +293,17 @@ window.__ModuleLoader__.load({
       'agent.noFile': 'No file open',
       'agent.noSelection': 'No selection (uses the current file)',
       'agent.hint': '⌘↵ sends; the Agent continues in the native session and owns its transcript.',
+      'agent.placeholderShort': 'Ask the Writing Agent to revise the current file or selection, Enter to send',
+      'agent.result': 'Result',
+      'agent.running': 'Generating…',
+      'agent.applySelection': 'Replace selection',
+      'agent.append': 'Append to file',
+      'agent.copy': 'Copy',
+      'agent.close': 'Close',
+      'agent.stale': 'The source changed after generation; copy the result or regenerate.',
+      'agent.applied': 'Written to the file; waiting for autosave and compile.',
+      'agent.emptyInstruction': 'Write an instruction first.',
+      'agent.failed': 'Generation failed',
       'editor.copied': 'Reference copied; paste it into the conversation.',
       'editor.locateFailed': 'Locate failed: run a full build and try again.',
       'paper.title': 'Paper PDF',
@@ -432,6 +451,9 @@ window.__ModuleLoader__.load({
 .leaf-tree{display:flex;flex-direction:column;min-width:170px;max-width:420px;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l1);flex:none}
 .leaf-drawer{position:absolute;left:0;top:0;bottom:0;width:280px;z-index:8;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l2);box-shadow:8px 0 24px rgba(0,0,0,.12);display:flex;flex-direction:column;min-height:0}
 .leaf-drawer .leaf-tree{width:100%;max-width:none;border-right:0;flex:1;min-height:0}
+.leaf-file-mask{position:fixed;inset:0;z-index:70;background:rgba(20,24,28,.28);display:flex;align-items:center;justify-content:center;padding:24px}
+.leaf-file-panel{width:min(420px,calc(100vw - 48px));height:min(620px,78vh);max-height:78vh;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+.leaf-file-panel .leaf-tree{width:100%;max-width:none;border-right:0;flex:1;min-height:0}
 .leaf-pane-head{display:flex;align-items:center;gap:5px;height:34px;padding:0 7px 0 10px;border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}
 .leaf-pane-head .leaf-spacer{flex:1}
 .leaf-tree-scroll{flex:1;overflow:auto;padding:4px 0 16px;min-height:0}
@@ -470,6 +492,12 @@ window.__ModuleLoader__.load({
 .leaf-tok-cmd{color:#8a3fb0}.leaf-tok-comment{color:var(--dsw-alias-label-tertiary);font-style:italic}.leaf-tok-math{color:#1f6fb2}.leaf-tok-brace{color:var(--dsw-alias-label-secondary)}.leaf-tok-env{color:#1f7a4d}.leaf-tok-opt{color:#b06a1f}
 body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .leaf-tok-math{color:#8cc4f5}body[data-ds-dark-theme] .leaf-tok-env{color:#8fd9ae}body[data-ds-dark-theme] .leaf-tok-opt{color:#e8b877}
 .leaf-agent-dock{display:flex;flex-direction:column;flex:none;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-height:0}
+.leaf-agent-bar{display:flex;align-items:center;gap:8px;padding:0 10px;height:44px;flex:none}
+.leaf-agent-target{font-size:11px;color:var(--dsw-alias-label-tertiary);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.leaf-agent-result{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--dsw-alias-border-l1)}
+.leaf-agent-result-head{display:flex;align-items:center;gap:6px;padding:4px 10px;flex:none;font-size:11.5px;color:var(--dsw-alias-label-tertiary);min-height:28px}
+.leaf-agent-result-body{margin:0;padding:8px 10px;overflow:auto;flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base)}
+.leaf-agent-result-body.error{color:var(--dsw-alias-state-error-primary,#c0463f)}
 .leaf-agent-body{display:flex;flex-direction:column;gap:6px;padding:6px 10px 10px;flex:1;min-height:0}
 .leaf-agent-input{flex:1;min-height:54px;resize:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:7px 9px;font:inherit;font-size:12.5px;line-height:1.5;outline:none}
 .leaf-agent-input:focus{border-color:var(--dsw-alias-state-business-primary)}
@@ -564,6 +592,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     const isTex = (name) => ['tex', 'bib', 'sty', 'cls', 'ltx'].includes(extOf(name))
 
     const basename = (path) => String(path).split('/').pop() || path
+
+    /**
+     * Unwrap a single fenced LaTeX block so "apply" inserts source, not fences.
+     * @param {string} text - model answer.
+     * @returns {string} insertable text.
+     */
+    function cleanAssistText(text) {
+      const trimmed = String(text ?? '').trim()
+      const fenced = /^```(?:latex|tex)?\s*\n([\s\S]*?)\n```\s*$/.exec(trimmed)
+      return fenced === null ? trimmed : fenced[1].trim()
+    }
     const dirname = (path) => {
       const parts = String(path).split('/')
       parts.pop()
@@ -695,7 +734,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return [value, update]
     }
 
-    const boolStored = (raw, fallback) => (raw === '1' ? true : raw === '0' ? false : fallback)
+    const boolStored = (raw, fallback) => (raw === true || raw === '1' ? true : raw === false || raw === '0' ? false : fallback)
 
     /** Workspace paths the user pinned as dsh-leaf entries (client-side mirror). */
     function pinnedPaths() {
@@ -1013,7 +1052,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const signature = `${node.selectionStart}:${node.selectionEnd}:${selected.length}`
         if (signature !== lastSelection.current) {
           lastSelection.current = signature
-          onSelectionChange?.(selected === '' ? null : { path: tab.path, fromLine, toLine, text: selected })
+          onSelectionChange?.(selected === '' ? null : { path: tab.path, fromLine, toLine, text: selected, start: node.selectionStart, end: node.selectionEnd })
         }
       }, [tab?.content, onCursor, onSelectionChange])
 
@@ -1460,10 +1499,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [rightTab, setRightTab] = useState('pdf')
       const [drawerOpenRaw, setDrawerOpenRaw] = usePersisted(STORAGE.drawer, false)
       const drawerOpen = boolStored(drawerOpenRaw, false)
-      const [agentOpenRaw, setAgentOpenRaw] = usePersisted(STORAGE.agentOpen, true)
-      const agentOpen = boolStored(agentOpenRaw, true)
       const [agentInput, setAgentInput] = useState('')
       const [selection, setSelection] = useState(null)
+      const [assist, setAssist] = useState(null)
       const [modal, setModal] = useState(null)
       const [pdfPage, setPdfPage] = useState('1')
       const [pdfFit, setPdfFit] = useState('width')
@@ -1828,6 +1866,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [workspacePath, saveTab])
 
+      const cleanCache = useCallback(async () => {
+        if (workspacePath === null) return
+        try {
+          const payload = await api('/clean', { body: { workspace: workspacePath } })
+          if (payload.state !== undefined) setState(payload.state)
+          showToast(t('toolbar.clean'))
+        } catch (error) {
+          showToast(`${t('toast.error')}: ${error.message}`)
+        }
+      }, [workspacePath, t, showToast])
+
       const exportPdf = useCallback(async () => {
         if (workspacePath === null) return
         if (buildingRef.current) {
@@ -1934,26 +1983,76 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         props.startWritingAgent?.(activeWorkspace.workspaceId, lines.join('\n'))
       }, [activeWorkspace, receipt, project, t])
 
-      const sendDock = useCallback(() => {
-        if (activeWorkspace === null || activeWorkspace === undefined) return
-        const lines = [t('editor.agentPromptTitle'), '']
-        if (activeTab !== null) {
-          lines.push(`${t('agent.file')}: ${activeTab.path}`)
-          lines.push(`${t('modal.mainDoc')}: ${project?.mainDocument ?? '—'}`)
-          lines.push('')
+      const runAssist = useCallback(async () => {
+        if (workspacePath === null) return
+        const instruction = agentInput.trim()
+        if (instruction === '') {
+          showToast(t('agent.emptyInstruction'))
+          return
         }
-        if (selection !== null && selection.text !== undefined && selection.text.trim() !== ''
-          && (activeTab === null || selection.path === undefined || selection.path === activeTab.path)) {
-          lines.push(`${t('agent.selection')} (${selection.fromLine}-${selection.toLine}):`, '```latex', selection.text, '```', '')
-        }
-        lines.push(t('editor.agentPromptAsk'), agentInput.trim() === '' ? t('agent.placeholder') : agentInput.trim())
+        const sourceSelection = selection !== null && (activeTab === null || selection.path === activeTab.path)
+          ? selection
+          : null
+        setAssist({ status: 'running' })
         try {
-          props.startWritingAgent?.(activeWorkspace.workspaceId, lines.join('\n'))
+          const result = await api('/assist', {
+            body: {
+              workspace: workspacePath,
+              path: activeTab?.path ?? null,
+              content: activeTab?.content ?? null,
+              mainDocument: project?.mainDocument ?? null,
+              selection: sourceSelection,
+              instruction,
+            },
+          })
+          if (!alive.current) return
+          setAssist({
+            status: 'done',
+            text: cleanAssistText(result.text),
+            model: result.model,
+            source: { path: activeTab?.path ?? null, selection: sourceSelection },
+            at: Date.now(),
+          })
           setAgentInput('')
+        } catch (error) {
+          if (!alive.current) return
+          setAssist({ status: 'error', error: error.message })
+        }
+      }, [workspacePath, activeTab, project, selection, agentInput, t, showToast])
+
+      const applyAssist = useCallback(() => {
+        if (assist?.status !== 'done' || activeTab === null) return
+        const source = assist.source
+        if (source?.selection !== null && source?.selection !== undefined) {
+          const chosen = source.selection
+          if (source.path !== activeTab.path
+            || chosen.start === undefined || chosen.end === undefined
+            || activeTab.content.slice(chosen.start, chosen.end) !== chosen.text) {
+            showToast(t('agent.stale'))
+            return
+          }
+          const next = activeTab.content.slice(0, chosen.start) + assist.text + activeTab.content.slice(chosen.end)
+          updateTab(activeTab.path, next)
+          setSelection(null)
+        } else if (source?.path !== null && source?.path !== undefined && source.path !== activeTab.path) {
+          showToast(t('agent.stale'))
+          return
+        } else {
+          updateTab(activeTab.path, `${activeTab.content.replace(/\s*$/, '')}\n\n${assist.text}\n`)
+        }
+        setAssist(null)
+        showToast(t('agent.applied'))
+      }, [assist, activeTab, t, showToast, updateTab])
+
+      const copyAssist = useCallback(async () => {
+        if (assist?.status !== 'done') return
+        try {
+          await navigator.clipboard.writeText(assist.text)
+          showToast(t('menu.copySnippetDone'))
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
-      }, [activeWorkspace, activeTab, project, selection, agentInput, t, props])
+      }, [assist, t, showToast])
 
       const sendToAgent = useCallback((payload) => {
         if (activeWorkspace === null || activeWorkspace === undefined) return
@@ -2062,43 +2161,24 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         : t(`status.${buildStatus === 'success' || buildStatus === 'warning' || buildStatus === 'failed' || buildStatus === 'stopped' || buildStatus === 'timeout' || buildStatus === 'building' || buildStatus === 'dirty' ? buildStatus : 'idle'}`)
 
       return h('div', { className: 'leaf-root' },
-        /* Row 1: workspace + environment + settings */
         h('div', { className: 'leaf-toolbar' },
-          h('div', { className: 'leaf-brand' }, h(LeafMark, { size: 18 }), h('span', null, 'dsh-leaf')),
+          h('div', { className: 'leaf-brand', title: workspacePath ?? '' },
+            h(LeafMark, { size: 16 }),
+            h('span', null, 'dsh-leaf'),
+            h('span', { className: 'leaf-muted', style: { fontSize: 11, fontWeight: 400, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+              workspacePath === null ? '' : basename(workspacePath)),
+          ),
           h('button', {
             type: 'button',
-            className: `leaf-btn small ${drawerOpen ? '' : 'ghost'}`,
+            className: `leaf-btn icon small ${drawerOpen ? '' : 'ghost'}`,
             title: t('tree.title'),
             onClick: () => setDrawerOpenRaw((value) => !boolStored(value, false)),
-          }, h(Icon, { name: 'folder' }), t('tree.title')),
-          h('label', { className: 'leaf-field' },
-            h('span', null, t('toolbar.workspace')),
-            h('select', {
-              className: 'leaf-select',
-              value: workspacePath ?? '',
-              onChange: (event) => setActivePath(event.target.value),
-              title: workspacePath ?? '',
-            }, workspaceItems.map((item) => h('option', { key: item.workspaceId, value: item.path }, item.title || basename(item.path)))),
-          ),
-          h('span', { className: 'leaf-spacer' }),
-          environment === null ? null : h('button', {
-            type: 'button',
-            className: `leaf-chip ${environment.status === 'ready' ? 'ok' : environment.status === 'missing' || environment.status === 'failed' ? 'bad' : ''}`,
-            onClick: () => setModal({ kind: 'env', environment }),
-            title: t('toolbar.env'),
-          },
-            h('span', { className: `leaf-dot ${environment.status === 'ready' ? 'ok' : environment.status === 'missing' || environment.status === 'failed' ? 'bad' : 'warn'}` }),
-            t(`env.${environment.status === 'ready' ? 'ready' : environment.status === 'detected' ? 'detected' : environment.status === 'partial' ? 'partial' : environment.status === 'failed' ? 'failed' : 'missing'}`),
-          ),
-          h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('toolbar.refresh'), onClick: () => { refreshState(); loadDir('') } }, h(Icon, { name: 'refresh' })),
-          h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings' })),
-        ),
-        /* Row 2: project build controls */
-        h('div', { className: 'leaf-toolbar second' },
+          }, h(Icon, { name: 'folder' })),
           h('label', { className: 'leaf-field' },
             h('span', null, t('toolbar.main')),
             h('select', {
               className: 'leaf-select',
+              style: { maxWidth: 220 },
               value: project?.mainDocument ?? '',
               onChange: (event) => patchProject({ mainDocument: event.target.value === '' ? null : event.target.value }),
               title: t('modal.mainDocHint'),
@@ -2111,7 +2191,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             h('span', null, t('toolbar.engine')),
             h('select', {
               className: 'leaf-select',
-              style: { maxWidth: 110 },
+              style: { maxWidth: 108 },
               value: project?.engine ?? 'xelatex',
               onChange: (event) => patchProject({ engine: event.target.value }),
             },
@@ -2133,10 +2213,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               title: t('toolbar.mode.fast'),
             }, t('toolbar.mode.fast')),
           ),
-          h(Switch, { checked: project?.autoCompile ?? true, onChange: (value) => patchProject({ autoCompile: value }), label: t('toolbar.auto') }),
           h('span', { className: 'leaf-spacer' }),
-          h('span', { className: `leaf-chip ${buildStatus === 'failed' || buildStatus === 'timeout' ? 'bad' : buildStatus === 'success' ? 'ok' : ''}` },
-            buildStatus === 'building' ? h('span', { className: 'leaf-spin' }) : h('span', { className: `leaf-dot ${buildStatus === 'failed' || buildStatus === 'timeout' ? 'bad' : buildStatus === 'success' ? 'ok' : buildStatus === 'building' ? 'busy' : 'warn'}` }),
+          h('span', {
+            className: `leaf-chip ${buildStatus === 'failed' || buildStatus === 'timeout' || buildStatus === 'no-environment' ? 'bad' : buildStatus === 'success' ? 'ok' : ''}`,
+            title: environment === null ? t('toolbar.env') : (environment.message ?? ''),
+            onClick: () => setModal({ kind: 'env', environment }),
+          },
+            buildStatus === 'building' ? h('span', { className: 'leaf-spin' }) : h('span', { className: `leaf-dot ${buildStatus === 'failed' || buildStatus === 'timeout' || buildStatus === 'no-environment' ? 'bad' : buildStatus === 'success' ? 'ok' : buildStatus === 'building' ? 'busy' : 'warn'}` }),
             statusLabel,
           ),
           buildStatus === 'building'
@@ -2147,7 +2230,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                 onClick: () => compile(),
                 disabled: project?.mainDocument === null || environment?.available === false,
               }, h(Icon, { name: 'play' }), t('toolbar.compile')),
-          h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('toolbar.clean'), onClick: () => compile({ clean: true }) }, h(Icon, { name: 'trash' })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings' })),
         ),
         dirtyCount > 0 ? h('div', { className: 'leaf-banner' }, h('span', null, `${dirtyCount} ${t('editor.unsaved')}`), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => saveTab(activeTabPath) }, t('editor.save'))) : null,
         state?.ambiguousMain === true ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('main.ambiguous'))) : null,
@@ -2239,50 +2322,62 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       },
                     }),
                   ),
-            h('div', { className: 'leaf-agent-dock', style: { height: agentOpen ? 196 : 30 } },
-              h('div', { className: 'leaf-log-head' },
-                h('button', {
-                  type: 'button',
-                  className: 'leaf-btn small ghost',
-                  title: agentOpen ? t('log.hide') : t('log.show'),
-                  onClick: () => setAgentOpenRaw((value) => !boolStored(value, true)),
-                }, h(Chevron, { open: agentOpen })),
-                h(LeafMark, { size: 13 }),
-                h('span', null, t('agent.title')),
-                h('span', { className: 'leaf-muted' }, `· ${t('agent.native')}`),
-                h('span', { className: 'leaf-spacer' }),
-                activeTab === null ? null : h('span', { className: 'leaf-muted', title: activeTab.path }, activeTab.path),
-              ),
-              agentOpen ? h('div', { className: 'leaf-agent-body' },
-                h('div', { className: 'leaf-agent-context' },
-                  h('span', null, `${t('agent.file')}:`),
-                  h('code', null, activeTab?.path ?? t('agent.noFile')),
-                  h('span', null, '·'),
-                  h('span', null, selection === null ? t('agent.noSelection') : `${t('agent.selection')} ${selection.fromLine}-${selection.toLine}`),
-                ),
-                h('textarea', {
-                  className: 'leaf-agent-input',
+            h('div', { className: 'leaf-agent-dock', style: { height: assist === null ? 44 : 248 } },
+              h('div', { className: 'leaf-agent-bar' },
+                h(LeafMark, { size: 14 }),
+                h('span', { className: 'leaf-agent-target', title: activeTab?.path ?? '' },
+                  activeTab === null ? t('agent.noFile') : `${activeTab.name}${selection === null ? '' : ` · ${selection.fromLine}-${selection.toLine}`}`),
+                h('input', {
+                  className: 'leaf-input grow',
                   value: agentInput,
-                  placeholder: t('agent.placeholder'),
+                  placeholder: t('agent.placeholderShort'),
                   onChange: (event) => setAgentInput(event.target.value),
                   onKeyDown: (event) => {
-                    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                    if (event.isComposing || event.nativeEvent?.isComposing) return
+                    if (event.key === 'Enter' && !event.shiftKey) {
                       event.preventDefault()
-                      sendDock()
+                      runAssist()
                     }
                   },
                 }),
-                h('div', { className: 'leaf-agent-actions' },
-                  h('span', { className: 'leaf-muted', style: { fontSize: 11 } }, t('agent.hint')),
-                  h('span', { className: 'leaf-spacer' }),
-                  h('button', {
-                    type: 'button',
-                    className: 'leaf-btn small primary',
-                    disabled: activeWorkspace === null,
-                    onClick: sendDock,
-                  }, h(LeafMark, { size: 12 }), t('agent.send')),
-                ),
-              ) : null,
+                assist?.status === 'running'
+                  ? h('span', { className: 'leaf-spin' })
+                  : h('button', {
+                      type: 'button',
+                      className: 'leaf-btn primary small',
+                      disabled: workspacePath === null || agentInput.trim() === '',
+                      onClick: runAssist,
+                    }, t('agent.title')),
+              ),
+              assist === null
+                ? null
+                : h('div', { className: 'leaf-agent-result' },
+                    h('div', { className: 'leaf-agent-result-head' },
+                      assist.status === 'running'
+                        ? h('span', null, t('agent.running'))
+                        : assist.status === 'error'
+                          ? h('span', { style: { color: 'var(--dsw-alias-state-error-primary,#c0463f)' } }, `${t('agent.failed')}: ${assist.error}`)
+                          : h('span', null, `${t('agent.result')} · ${assist.model ?? ''}`),
+                      h('span', { className: 'leaf-spacer' }),
+                      assist.status === 'done'
+                        ? h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: copyAssist }, t('agent.copy'))
+                        : null,
+                      assist.status === 'done'
+                        ? h('button', {
+                            type: 'button',
+                            className: 'leaf-btn small primary',
+                            disabled: activeTab === null,
+                            onClick: applyAssist,
+                          }, assist.source?.selection === null || assist.source?.selection === undefined ? t('agent.append') : t('agent.applySelection'))
+                        : null,
+                      h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: () => setAssist(null) }, t('agent.close')),
+                    ),
+                    assist.status === 'done'
+                      ? h('pre', { className: 'leaf-agent-result-body' }, assist.text)
+                      : assist.status === 'error'
+                        ? h('pre', { className: 'leaf-agent-result-body error' }, assist.error)
+                        : h('div', { className: 'leaf-agent-result-body' }, t('agent.running')),
+                  ),
             ),
           ),
           h('div', { className: 'leaf-resizer', onPointerDown: onPaperResize, 'aria-hidden': true }),
@@ -2344,6 +2439,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           onPatch: patchProject,
           onProbe: runProbe,
           onRedetect: redetectEnv,
+          onClean: cleanCache,
+          workspaces: workspaceItems,
+          activePath: workspacePath,
+          onWorkspace: setActivePath,
         }),
       )
     }
@@ -2439,12 +2538,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function SettingsModal({ onClose, onPatch, project, candidates, t }) {
+    function SettingsModal({ onClose, onPatch, project, candidates, environment, onProbe, onRedetect, onClean, workspaces, activePath, onWorkspace, t }) {
       const [main, setMain] = useState(project?.mainDocument ?? '')
       const [cwd, setCwd] = useState(project?.buildCwd ?? '')
       const [enabled, setEnabled] = useState(project?.enabled !== false)
+      const [autoCompile, setAutoCompile] = useState(project?.autoCompile !== false)
+      const [workspace, setWorkspace] = useState(activePath ?? '')
       const save = () => {
-        onPatch({ mainDocument: main === '' ? null : main, buildCwd: cwd === '' ? null : cwd, enabled })
+        onPatch({ mainDocument: main === '' ? null : main, buildCwd: cwd === '' ? null : cwd, enabled, autoCompile })
+        if (workspace !== '' && workspace !== activePath) onWorkspace?.(workspace)
         onClose()
       }
       return h(Modal, {
@@ -2456,6 +2558,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         ],
       },
         h('div', { className: 'leaf-form' },
+          workspaces !== null && workspaces !== undefined && workspaces.length > 1
+            ? h('label', null, t('toolbar.workspace'),
+                h('select', { className: 'leaf-select', value: workspace, onChange: (event) => setWorkspace(event.target.value) },
+                  workspaces.map((item) => h('option', { key: item.workspaceId, value: item.path }, item.title || basename(item.path))),
+                ),
+              )
+            : null,
           h('label', null, t('modal.mainDoc'),
             h('select', { className: 'leaf-select', value: main, onChange: (event) => setMain(event.target.value) },
               h('option', { value: '' }, '—'),
@@ -2469,9 +2578,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             h('span', { className: 'leaf-hint' }, t('modal.buildCwdHint')),
           ),
           h('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+            h(Switch, { checked: autoCompile, onChange: setAutoCompile, label: t('toolbar.auto') }),
             h(Switch, { checked: enabled, onChange: setEnabled, label: t('modal.enable') }),
           ),
           h('span', { className: 'leaf-hint' }, t('modal.enableHint')),
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
+            h('span', { className: `leaf-dot ${environment?.status === 'ready' ? 'ok' : environment?.status === 'missing' || environment?.status === 'failed' ? 'bad' : 'warn'}` }),
+            h('span', { className: 'leaf-hint', style: { flex: 1 } }, `${t('toolbar.env')}: ${environment?.status ?? t('common.unknown')}`),
+            h('button', { type: 'button', className: 'leaf-btn small', onClick: onProbe }, t('env.probe')),
+            h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onRedetect }, t('env.redetect')),
+            h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onClean }, t('toolbar.clean')),
+          ),
         ),
       )
     }

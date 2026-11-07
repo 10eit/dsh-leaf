@@ -20,7 +20,7 @@
 | 资源预览 | PNG/JPG/GIF/WebP/SVG/PDF 应用内预览；显示相对路径、大小、更新时间；复制相对路径、复制 `\includegraphics` 片段、在访达中显示 |
 | 环境 | 在后台检测发行版、pdflatex/xelatex/latexmk/bibtex/biber/synctex；用最小示例做真实编译验证；检测/验证失败给出非阻塞说明，不自动下载 |
 | 模板 | 最小中文项目（ctex + XeLaTeX）与最小英文项目（pdfLaTeX）；只新增缺失文件，不覆盖用户内容 |
-| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics）与 `latex_build` 两个原生工具；写作视图底部有 **Writing Agent 输入坞**（文件/选区/主文档上下文 + 指令，⌘↵ 发送到原生会话），编辑器与构建失败面板也可一键带入上下文 |
+| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics/assist_probe）与 `latex_build` 两个原生工具；写作视图底部是**后台 Writing Agent 输入条**：使用原生默认模型在后台生成，结果回到面板，可直接替换选区或追加到文件，不切换主视图；需要工具/审批/历史时仍可交给原生会话 |
 | 定位 | 源码 → PDF 的 SyncTeX 正向定位（编辑器按钮）；PDF → 源码的反向查询 API 已提供（见 §6） |
 
 ## 2. 安装
@@ -95,7 +95,7 @@ open examples/paper/main.tex      # 也可以只在面板中浏览
 ### Client 半
 
 - 注册 `main` 面板 `key: 'leaf'`、`sidebar.panellist` 图标行、工作区右键动作、`⌘⇧L` 快捷键；另有一个不可见的 `shell.overlay` 观察器，在进入置顶的 dsh-leaf 工作区空白会话时打开写作视图。
-- 写作视图：文件抽屉 + 多文件编辑器 + 底部 **Writing Agent 输入坞** + 右侧「论文 PDF / 构建日志」双页。输入坞把上下文与指令交给原生会话，聊天记录仍由宿主管理（宿主没有可嵌入的聊天组件）。
+- 写作视图：单行工具栏 + 文件抽屉 + 多文件编辑器 + 底部 **后台 Writing Agent 输入条** + 右侧「论文 PDF / 构建日志」双页。输入条调用原生默认模型，结果内联显示并可写回文件，不跳转到新对话；设置（自动编译、环境、清理缓存）收进设置弹窗。
 - 只使用 React 与 `--dsw-alias-*` 主题 token；浅色/深色跟随宿主，不引入第二套设计系统。
 - 面板状态按工作区缓存在内存中：切到普通对话再回来会恢复标签、展开目录与预览；宽度、显示开关、最近工作区写入 `localStorage`。
 - 文件树与项目状态轮询只覆盖「根目录 + 已展开目录」，并在数据未变化时跳过 React 更新；编辑器高亮只渲染可视行。
@@ -135,7 +135,7 @@ open examples/paper/main.tex      # 也可以只在面板中浏览
 
 ### 关于 Writing Agent
 
-dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模型列表、权限与工具体系保持原生。写作视图通过 `latex_build`/`latex_project` 原生工具、`systemPrompt` 段落、「复制引用」、底部 Agent 输入坞与「交给 Writing Agent」把文件、行号和选区预填到**原生会话**；宿主没有暴露可嵌入的聊天组件，因此聊天记录仍在原生对话中，而不是在插件面板内重绘。差异审阅式写入尚未实现，Agent 的文件修改仍走宿主原生文件工具与权限提示。
+dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模型列表、权限与工具体系保持原生。写作视图的输入条把文件、行号和选区发给 `/dsh-leaf/assist`，Host 使用原生默认模型做**一次后台生成**并把结果写回面板（可替换选区或追加到文件，带过期检查）。它不使用工具、不写会话历史，因此适合润色/改写/解释；需要工具调用、审批和完整历史时，仍用「交给 Writing Agent」进入原生会话。宿主没有暴露可嵌入的聊天组件，所以聊天记录不在插件面板内重绘。部分引用/误改检查仍以用户审阅为准；Agent 的文件修改走宿主原生工具与权限提示。
 
 ## 7. 性能措施
 

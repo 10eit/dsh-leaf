@@ -7,6 +7,7 @@
  * The browser half lives in ./client.js and talks to this half only through
  * the authenticated `/dsh-leaf/*` HTTP routes.
  */
+import { createAssist } from './lib/assist.js'
 import { registerLeafRoutes } from './lib/routes.js'
 import { registerLeafTools } from './lib/tool.js'
 import { BuildManager } from './lib/tex.js'
@@ -45,6 +46,10 @@ export function apply(ctx, config = {}) {
   // ctx.inject so a profile without those services keeps the workspace usable.
   ctx.inject(['tools', 'workingDirectory'], (scoped) => {
     scoped.effect(() => registerLeafTools(scoped, leaf), 'dsh-leaf: agent tools')
+  })
+
+  ctx.inject(['llm', 'agentDefaultModel'], (scoped) => {
+    leaf.assist = createAssist({ llm: scoped.llm, agentDefaultModel: scoped.agentDefaultModel })
   })
 
   ctx.inject(['clientModules'], (scoped) => {
