@@ -21,23 +21,29 @@
 | 环境 | 在后台检测发行版、pdflatex/xelatex/latexmk/bibtex/biber/synctex；用最小示例做真实编译验证；检测/验证失败给出非阻塞说明，不自动下载 |
 | 模板 | 最小中文项目（ctex + XeLaTeX）与最小英文项目（pdfLaTeX）；只新增缺失文件，不覆盖用户内容 |
 | Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics/assist_probe）与 `latex_build` 两个原生工具；写作视图底部是**圆角三行 Writing Agent 输入框**（参考宿主 composer 样式）：使用原生默认模型在后台生成，结果回到面板，可直接替换选区或追加到文件，不切换主视图；需要工具/审批/历史时仍可交给原生会话 |
-| 定位 | 源码 → PDF 的 SyncTeX 正向定位（编辑器按钮）；PDF → 源码的反向查询 API 已提供（见 §6） |
+| 定位 | PDF → 源码：双击 PDF 文字，目标不是当前文件时先确认；源码 → PDF：保留 `/synctex/forward` Host API（编辑器按钮已移除） |
 
 ## 2. 安装
 
-本机 profile 已安装并启用该 bundle。重新安装或在新机器上安装：
+从 GitHub 克隆或下载本仓库后安装：
 
-1. 在 DeepSeek Harness 中使用插件管理器的 `install_bundle`，`target` 指向本仓库的**绝对目录**（本地包以链接方式安装）：
+```sh
+git clone https://github.com/10eit/dsh-leaf.git
+```
+
+1. 在 DeepSeek Harness 中使用插件管理器的 `install_bundle`，`target` 指向仓库目录（本地包以链接方式安装）：
 
    ```text
-   target: /Users/yanlinfu/Documents/dsh-leaf
+   target: /path/to/dsh-leaf
    ```
 
    也可以使用 CLI：
 
    ```sh
-   dsh plugin --profile "$DSH_PROFILE" add /Users/yanlinfu/Documents/dsh-leaf
+   dsh plugin --profile "$DSH_PROFILE" add /path/to/dsh-leaf
    ```
+
+   或使用 `npm pack` 生成的 tarball 作为安装目标。
 
 2. 安装后客户端 bundle 会进入 boot graph；**刷新一次页面**即可在左侧看到 dsh-leaf 图标。
 3. 卸载：`remove_bundle`（或 `dsh plugin remove dsh-leaf`）。插件的所有项目记录都写在 `<工作区>/.dsh-leaf/project.json`，卸载不会改动论文、图片、代码或会话。
