@@ -1,0 +1,11 @@
+# dsh-leaf bundle layer: one Host plugin row. The Client half is discovered from
+# package.json's `dsh.client` section and served as the ./client export.
+- insert:
+    - id: dsh-leaf
+      name: dsh-leaf
+      config:
+        # New or first-added workspaces open as dsh-leaf projects unless the
+        # workspace itself recorded an explicit opt-out.
+        enabledByDefault: true
+        engine: xelatex
+        autoCompile: true
