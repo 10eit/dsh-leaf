@@ -820,6 +820,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           return h('svg', common, h('path', { d: 'M13 8a5 5 0 1 1-1.5-3.6' }), h('path', { d: 'M13 2.5V5h-2.5' }))
         case 'plus':
           return h('svg', common, h('path', { d: 'M8 3.5v9M3.5 8h9' }))
+        case 'minus':
+          return h('svg', common, h('path', { d: 'M3.5 8h9' }))
         case 'file':
           return h('svg', common, h('path', { d: 'M2.5 2h7l3 3v9h-10z' }), h('path', { d: 'M9.5 2v3h3' }))
         case 'play':
@@ -1320,7 +1322,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
      * PDF page image + invisible text layer. Selecting text reports the word
      * centre so the host can run a SyncTeX inverse search to the source line.
      */
-    function PdfCanvas({ workspace, page, fit, url, version, t, onLocate, onPages }) {
+    function PdfCanvas({ workspace, page, fit, zoom = 1, onZoomStep, url, version, t, onLocate, onPages }) {
       const hostRef = useRef(null)
       const pageNumber = Math.max(1, Math.round(Number(page) || 1))
       const cacheKey = workspace === null ? null : `${workspace}|${version ?? ''}|${pageNumber}`
@@ -1372,6 +1374,18 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
       useEffect(() => {
         const node = hostRef.current
+        if (node === null || onZoomStep === undefined) return undefined
+        const onWheel = (event) => {
+          if (!(event.ctrlKey || event.metaKey)) return
+          event.preventDefault()
+          onZoomStep(event.deltaY < 0 ? 1 : -1)
+        }
+        node.addEventListener('wheel', onWheel, { passive: false })
+        return () => node.removeEventListener('wheel', onWheel)
+      }, [onZoomStep])
+
+      useEffect(() => {
+        const node = hostRef.current
         if (node === null || data === null || cacheKey === null) return
         node.scrollTop = pdfScrollMemory.get(cacheKey) ?? 0
       }, [data, cacheKey])
@@ -1409,9 +1423,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       // move off-screen with a single min/max pass. "Fit page" keeps the whole
       // sheet visible.
       const contentWidth = contentBox === null ? data.width : contentBox.width
-      const scale = fit === 'page'
+      const baseScale = fit === 'page'
         ? Math.min(availableWidth / data.width, availableHeight / data.height)
         : Math.min(2.2, Math.max(0.1, Math.max(120, box.width) / contentWidth))
+      const scale = Math.min(5, Math.max(0.05, baseScale * (zoom || 1)))
       const width = Math.max(1, data.width * scale)
       const height = Math.max(1, data.height * scale)
       const marginLeft = fit === 'page'
@@ -1460,8 +1475,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function PaperPane({ url, stale, page, fit, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent, workspace, pdfVersion, onLocate }) {
+    function PaperPane({ url, stale, page, fit, zoom, onZoom, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent, workspace, pdfVersion, onLocate }) {
       const [pageCount, setPageCount] = useState(0)
+      const normalizeZoom = (value) => Math.min(3, Math.max(0.5, Math.round(value * 100) / 100))
+      const stepZoom = useCallback((direction) => {
+        onZoom(normalizeZoom((zoom || 1) * (direction > 0 ? 1.15 : 1 / 1.15)))
+      }, [zoom, onZoom])
       const handlePages = useCallback((count) => setPageCount(count), [])
       const problems = (receipt?.errors?.length ?? 0) + (receipt?.warnings?.length ?? 0) + (receipt?.missing?.length ?? 0)
       return h('div', { className: 'leaf-paper', style },
@@ -1488,18 +1507,41 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   onChange: (event) => onPage(event.target.value.replace(/[^0-9]/g, '')),
                 }),
                 pageCount > 0 ? h('span', { className: 'leaf-muted', style: { fontSize: 12 } }, `/ ${pageCount}`) : null,
+                h('button', {
+                  type: 'button',
+                  className: 'leaf-btn icon small ghost',
+                  title: t('paper.zoomOut'),
+                  disabled: (zoom || 1) <= 0.5,
+                  onClick: () => stepZoom(-1),
+                }, h(Icon, { name: 'minus', size: 16 })),
+                h('button', {
+                  type: 'button',
+                  className: 'leaf-muted',
+                  title: t('paper.zoomReset'),
+                  style: { font: 'inherit', fontSize: 12, minWidth: 40, padding: 0, border: 0, background: 'transparent', color: 'var(--dsw-alias-label-secondary)', cursor: 'pointer' },
+                  onClick: () => onZoom(1),
+                }, `${Math.round((zoom || 1) * 100)}%`),
+                h('button', {
+                  type: 'button',
+                  className: 'leaf-btn icon small ghost',
+                  title: t('paper.zoomIn'),
+                  disabled: (zoom || 1) >= 3,
+                  onClick: () => stepZoom(1),
+                }, h(Icon, { name: 'plus', size: 16 })),
                 h('select', {
                   className: 'leaf-select',
                   style: { height: 24, fontSize: 12, maxWidth: 104 },
                   value: fit,
-                  onChange: (event) => onFit(event.target.value),
+                  onChange: (event) => {
+                    onFit(event.target.value)
+                    onZoom(1)
+                  },
                 },
                   h('option', { value: 'width' }, t('paper.fitWidth')),
                   h('option', { value: 'page' }, t('paper.fitPage')),
                 ),
                 url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 16 })),
                 url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 16 })),
-                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external', size: 16 })),
               )
             : null,
         ),
@@ -1673,6 +1715,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [modal, setModal] = useState(null)
       const [pdfPage, setPdfPage] = useState('1')
       const [pdfFit, setPdfFit] = useState('width')
+      const [pdfZoom, setPdfZoom] = useState(1)
       const [pdfReloadKey, setPdfReloadKey] = useState(0)
       const [jump, setJump] = useState(null)
       const [toast, showToast] = useToast()
@@ -1766,6 +1809,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         setPreview(saved.preview ?? null)
         setPdfPage(saved.pdfPage ?? '1')
         setPdfFit(saved.pdfFit ?? 'width')
+        setPdfZoom(typeof saved.pdfZoom === 'number' && saved.pdfZoom > 0 ? saved.pdfZoom : 1)
         setRightTab(saved.rightTab ?? 'pdf')
         setAgentInput(saved.agentInput ?? '')
         setSelection(saved.selection ?? null)
@@ -1784,12 +1828,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           preview,
           pdfPage,
           pdfFit,
+          pdfZoom,
           rightTab,
           agentInput,
           selection,
           drawerOpen: boolStored(drawerOpenRaw, false),
         })
-      }, [workspacePath, tabs, activeTabPath, preview, pdfPage, pdfFit, rightTab, agentInput, selection, drawerOpenRaw])
+      }, [workspacePath, tabs, activeTabPath, preview, pdfPage, pdfFit, pdfZoom, rightTab, agentInput, selection, drawerOpenRaw])
 
       // "Available" means a minimal document compiled, not merely that binaries
       // exist. Probe once per page life in the background so the first open is
@@ -2606,6 +2651,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             stale: pdfStale || (pdf === null && buildStatus === 'failed'),
             page: pdfPage,
             fit: pdfFit,
+            zoom: pdfZoom,
+            onZoom: setPdfZoom,
             onPage: setPdfPage,
             onFit: setPdfFit,
             onReload: () => setPdfReloadKey(Date.now()),
