@@ -812,13 +812,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         case 'plus':
           return h('svg', common, h('path', { d: 'M8 3.5v9M3.5 8h9' }))
         case 'file':
-          return h('svg', common, h('path', { d: 'M4 1.5h5l3 3v10H4z' }), h('path', { d: 'M9 1.5v3h3' }))
+          return h('svg', common, h('path', { d: 'M2.5 2h7l3 3v9h-10z' }), h('path', { d: 'M9.5 2v3h3' }))
         case 'play':
           return h('svg', common, h('path', { d: 'M4.5 2.8 13 8l-8.5 5.2z', fill: 'currentColor', stroke: 'none' }))
         case 'stop':
           return h('svg', common, h('rect', { x: 4, y: 4, width: 8, height: 8, rx: 1.4, fill: 'currentColor', stroke: 'none' }))
         case 'settings':
-          return h('svg', common, h('circle', { cx: 8, cy: 8, r: 2.1 }), h('path', { d: 'M8 1.4v1.8M8 12.8v1.8M1.4 8h1.8M12.8 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3' }))
+          return h('svg', common, h('path', { d: 'M6.6 1.7h2.8l.4 1.7 1.3.8 1.7-.5 1.4 2.4-1.3 1.2v1.5l1.3 1.2-1.4 2.4-1.7-.5-1.3.8-.4 1.7H6.6l-.4-1.7-1.3-.8-1.7.5-1.4-2.4 1.3-1.2V6.4L1.8 5.2l1.4-2.4 1.7.5 1.3-.8z' }), h('circle', { cx: 8, cy: 8.1, r: 2.1 }))
         case 'download':
           return h('svg', common, h('path', { d: 'M8 2v8' }), h('path', { d: 'M4.5 6.5 8 10l3.5-3.5' }), h('path', { d: 'M2.5 13.5h11' }))
         case 'external':
