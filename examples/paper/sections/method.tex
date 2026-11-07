@@ -1,0 +1,12 @@
+\section{方法}
+\label{sec:method}
+
+设工作区中的主文档为 $M$，章节集合为 $S=\{s_1,\dots,s_n\}$。编译过程总是从 $M$ 出发，
+按引用关系展开 $S$ 与图片资源：
+\begin{equation}
+  \mathrm{Build}(M) = \mathrm{PDF}\bigl(M \cup \mathrm{deps}(M)\bigr).
+  \label{eq:build}
+\end{equation}
+
+式~\eqref{eq:build} 说明，章节标签的点击不会改变编译入口；它只是切换到对应的源码位置。
+快速模式将外部图片替换为占位框，但保留文字与公式排版，导出时始终回到完整编译结果。
