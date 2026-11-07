@@ -500,11 +500,16 @@ window.__ModuleLoader__.load({
 .leaf-textarea.composing{color:var(--dsw-alias-label-primary)}
 .leaf-textarea::selection{background:var(--dsw-alias-bg-document-selection,#b9d7ff);color:transparent}
 .leaf-tok-cmd{color:#8a3fb0}.leaf-tok-comment{color:var(--dsw-alias-label-tertiary);font-style:italic}.leaf-tok-math{color:#1f6fb2}.leaf-tok-brace{color:var(--dsw-alias-label-secondary)}.leaf-tok-env{color:#1f7a4d}.leaf-tok-opt{color:#b06a1f}
+.leaf-sel{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4176e6) 24%,transparent);border-radius:2px}
 body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .leaf-tok-math{color:#8cc4f5}body[data-ds-dark-theme] .leaf-tok-env{color:#8fd9ae}body[data-ds-dark-theme] .leaf-tok-opt{color:#e8b877}
 .leaf-agent-dock{display:flex;flex-direction:column;flex:none;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-height:0}
 .leaf-agent-bar{display:flex;align-items:flex-end;gap:8px;padding:7px 11px;flex:none}
-.leaf-agent-textarea{flex:1;min-width:0;height:48px;max-height:100px;resize:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:5px 9px;font:inherit;font-size:13px;line-height:20px;outline:none;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
-.leaf-agent-textarea:focus{border-color:var(--dsw-alias-state-business-primary)}
+.leaf-agent-composer{display:flex;align-items:flex-end;gap:8px;margin:8px 11px;padding:6px 7px 6px 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:var(--dsw-alias-bg-base);flex:none;transition:border-color .12s ease,box-shadow .12s ease}
+.leaf-agent-composer:focus-within{border-color:var(--dsw-alias-state-business-primary,#4176e6);box-shadow:0 0 0 2px color-mix(in srgb,var(--dsw-alias-state-business-primary,#4176e6) 18%,transparent)}
+.leaf-agent-send{width:32px;height:32px;border-radius:50%;border:0;background:var(--dsw-alias-state-business-primary,#4176e6);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer;margin-bottom:1px}
+.leaf-agent-send:hover:not(:disabled){filter:brightness(1.06)}
+.leaf-agent-send:disabled{opacity:.4;cursor:not-allowed}
+.leaf-agent-textarea{flex:1;min-width:0;height:66px;max-height:150px;resize:none;border:0;border-radius:0;background:transparent;color:var(--dsw-alias-label-primary);padding:4px 2px;font:inherit;font-size:13.5px;line-height:20px;outline:none;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
 .leaf-agent-target{font-size:12px;align-self:center;color:var(--dsw-alias-label-tertiary);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
 .leaf-agent-result{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--dsw-alias-border-l1)}
 .leaf-agent-result-head{display:flex;align-items:center;gap:6px;padding:5px 11px;flex:none;font-size:12.5px;color:var(--dsw-alias-label-tertiary);min-height:28px}
@@ -822,6 +827,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           return h('svg', common, h('path', { d: 'M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4' }))
         case 'chevron':
           return h('svg', common, h('path', { d: 'M6 3.5 10.5 8 6 12.5' }))
+        case 'send':
+          return h('svg', common, h('path', { d: 'M8 13V3M4.5 6.5 8 3l3.5 3.5' }))
         case 'gear-play':
           return h('svg', common, h('path', { d: 'M2 8h2M12 8h2M8 2v2M8 12v2' }), h('circle', { cx: 8, cy: 8, r: 2.4 }))
         default:
@@ -962,7 +969,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     /** Virtualized textarea editor with a themed syntax layer. */
-    function LatexEditor({ tab, jump, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, onSelectionChange, t }) {
+    function LatexEditor({ tab, jump, selection, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, onSelectionChange, t }) {
       const textareaRef = useRef(null)
       const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
@@ -976,6 +983,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [cursor, setCursor] = useState({ line: 1, column: 1 })
       const content = tab?.content ?? ''
       const lines = useMemo(() => content.split('\n'), [content])
+      const lineOffsets = useMemo(() => {
+        const offsets = []
+        let offset = 0
+        for (const line of lines) {
+          offsets.push(offset)
+          offset += line.length + 1
+        }
+        return offsets
+      }, [lines])
       const lineHeight = 22
       const overscan = 10
 
@@ -1101,13 +1117,65 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
       const start = Math.max(0, Math.floor(scrollTop / lineHeight) - overscan)
       const end = Math.min(lines.length, start + Math.ceil(viewport / lineHeight) + overscan * 2)
+      const selectedRange = selection !== null && selection !== undefined
+        && typeof selection.start === 'number' && typeof selection.end === 'number'
+        && selection.end > selection.start
+        ? [selection.start, selection.end]
+        : null
+      const renderTokens = (tokens, lineIndex) => {
+        if (selectedRange === null) {
+          return tokens.map((token, tokenIndex) => token.type === ''
+            ? token.text
+            : h('span', { key: tokenIndex, className: `leaf-tok-${token.type}` }, token.text))
+        }
+        const lineStart = lineOffsets[lineIndex] ?? 0
+        const from = Math.max(0, selectedRange[0] - lineStart)
+        const to = Math.min(lines[lineIndex].length, selectedRange[1] - lineStart)
+        if (from >= to) {
+          return tokens.map((token, tokenIndex) => token.type === ''
+            ? token.text
+            : h('span', { key: tokenIndex, className: `leaf-tok-${token.type}` }, token.text))
+        }
+        const nodes = []
+        let offset = 0
+        let key = 0
+        for (const token of tokens) {
+          const tokenStart = offset
+          const tokenEnd = offset + token.text.length
+          offset = tokenEnd
+          const selectedFrom = Math.max(tokenStart, from)
+          const selectedTo = Math.min(tokenEnd, to)
+          if (selectedFrom >= selectedTo) {
+            nodes.push(token.type === ''
+              ? token.text
+              : h('span', { key: `t${key++}`, className: `leaf-tok-${token.type}` }, token.text))
+            continue
+          }
+          if (selectedFrom > tokenStart) {
+            const before = token.text.slice(0, selectedFrom - tokenStart)
+            nodes.push(token.type === ''
+              ? before
+              : h('span', { key: `t${key++}`, className: `leaf-tok-${token.type}` }, before))
+          }
+          const marked = token.text.slice(selectedFrom - tokenStart, selectedTo - tokenStart)
+          nodes.push(h('span', {
+            key: `s${key++}`,
+            className: `leaf-sel${token.type === '' ? '' : ` leaf-tok-${token.type}`}`,
+          }, marked))
+          if (selectedTo < tokenEnd) {
+            const after = token.text.slice(selectedTo - tokenStart)
+            nodes.push(token.type === ''
+              ? after
+              : h('span', { key: `t${key++}`, className: `leaf-tok-${token.type}` }, after))
+          }
+        }
+        return nodes
+      }
       const visible = []
       for (let index = start; index < end; index += 1) {
         const tokens = tokenizeLine(lines[index])
         visible.push(h('div', { key: index, className: 'leaf-line', style: { top: `${index * lineHeight}px` } },
-          tokens.map((token, tokenIndex) => token.type === ''
-            ? token.text
-            : h('span', { key: tokenIndex, className: `leaf-tok-${token.type}` }, token.text)),
+          renderTokens(tokens, index),
         ))
       }
 
@@ -2310,6 +2378,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                     h(LatexEditor, {
                       tab: activeTab,
                       jump,
+                      selection,
                       t,
                       onChange: (content) => updateTab(activeTab.path, content),
                       onSave: () => saveTab(activeTab.path),
@@ -2322,16 +2391,14 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       },
                     }),
                   ),
-            h('div', { className: 'leaf-agent-dock', style: { height: assist === null ? 68 : 280 } },
-              h('div', { className: 'leaf-agent-bar' },
-                h(LeafMark, { size: 18 }),
-                h('span', { className: 'leaf-agent-target', title: activeTab?.path ?? '' },
-                  activeTab === null ? t('agent.noFile') : `${activeTab.name}${selection === null ? '' : ` · ${selection.fromLine}-${selection.toLine}`}`),
+            h('div', { className: 'leaf-agent-dock', style: { height: assist === null ? 92 : 300 } },
+              h('div', { className: 'leaf-agent-composer' },
                 h('textarea', {
                   className: 'leaf-agent-textarea',
-                  rows: 2,
+                  rows: 3,
                   value: agentInput,
                   placeholder: t('agent.placeholderShort'),
+                  'aria-label': t('agent.title'),
                   onChange: (event) => setAgentInput(event.target.value),
                   onKeyDown: (event) => {
                     if (event.isComposing || event.nativeEvent?.isComposing) return
@@ -2342,13 +2409,14 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   },
                 }),
                 assist?.status === 'running'
-                  ? h('span', { className: 'leaf-spin' })
+                  ? h('span', { className: 'leaf-spin', style: { marginBottom: 9 } })
                   : h('button', {
                       type: 'button',
-                      className: 'leaf-btn primary small',
+                      className: 'leaf-agent-send',
+                      title: t('agent.send'),
                       disabled: workspacePath === null || agentInput.trim() === '',
                       onClick: runAssist,
-                    }, t('agent.title')),
+                    }, h(Icon, { name: 'send', size: 18 })),
               ),
               assist === null
                 ? null
@@ -2401,7 +2469,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             onFixWithAgent: fixWithAgent,
           }),
           drawerOpen
-            ? h('div', { className: 'leaf-drawer', style: { bottom: assist === null ? 68 : 280 } },
+            ? h('div', { className: 'leaf-drawer', style: { bottom: assist === null ? 92 : 300 } },
                 h(FileTree, {
                   dirs,
                   expanded,
