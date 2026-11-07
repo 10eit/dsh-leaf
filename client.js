@@ -424,6 +424,9 @@ window.__ModuleLoader__.load({
 .leaf-root *{box-sizing:border-box}
 .leaf-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l1);flex-wrap:wrap;background:var(--dsw-alias-bg-base);flex:none}
 .leaf-toolbar.second{padding-top:0;border-bottom:1px solid var(--dsw-alias-border-l1);gap:10px}
+/* The host collapses the left sidebar to a drawer on macOS; the main column then starts under the traffic lights and the leading seat. Match the native conversation header's clearances. */
+[data-platform="darwin"] [data-sidebar-collapsed] .leaf-toolbar{padding-top:calc(var(--dsh-frame-top-clearance,48px) + 4px);padding-left:max(12px, calc(var(--dsh-frame-leading-clearance,0px) - 20px))}
+[data-sidebar-collapsed] .leaf-toolbar{padding-left:max(12px, calc(var(--dsh-frame-leading-clearance,0px) - 20px))}
 .leaf-brand{display:flex;align-items:center;gap:7px;font-weight:600;letter-spacing:.2px;margin-right:4px}
 .leaf-brand svg{display:block}
 .leaf-spacer{flex:1}
