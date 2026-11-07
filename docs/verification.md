@@ -44,12 +44,11 @@ Figures directory: figures
 `latex_build(mode="full")` 对示例论文完整编译（含 ctex 中文、`\includegraphics` PDF 图、bibtex 参考文献）：
 
 ```text
-Build warning in 2.9s (xelatex, full).
-Main document: main.tex
-Warnings (4): ctex 的 LaTeX release 提示（不影响产物）
+Build success in 1.5s (xelatex, full).
+Main document: examples/paper/main.tex
 ```
 
-产物：`.dsh-leaf/build/full/main.pdf`（2 页）。警告是 ctex 对 LaTeX release 日期的提示，不是排版错误。
+产物：`.dsh-leaf/build/full/main.pdf`（2 页）。ctex 的 “You have requested release …” 属于发行版簿记信息，解析器会过滤，不计入文档警告。
 
 另外验证了「主文档位于子目录」的默认工作目录规则：以仓库根目录为工作区、主文档为 `examples/paper/main.tex` 时，构建 cwd 自动取 `examples/paper`，输出仍写入根目录 `.dsh-leaf/build/full/main.pdf`，编译成功。
 
