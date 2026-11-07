@@ -236,7 +236,7 @@ test('the PDF text route returns per-page geometry for the current PDF', async (
     assert.equal(payload.pages, 2)
     assert.equal(payload.words[0].text, 'dsh-leaf')
     assert.equal(calls[0].page, 1)
-    assert.match(calls[0].pdfPath, /main-fast\.pdf$/)
+    assert.equal(calls[0].pdfPath, '.dsh-leaf/build/fast/main-fast.pdf')
   } finally {
     await server.close()
     await rm(dir, { recursive: true, force: true })

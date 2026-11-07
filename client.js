@@ -536,6 +536,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-pdf-actions{display:flex;align-items:center;gap:4px;margin-left:auto;padding:0 6px;flex:none}
 .leaf-paper-body{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-layer-2)}
 .leaf-paper-body iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.leaf-pdf-fallback{position:absolute;inset:0;display:flex;flex-direction:column}
+.leaf-pdf-fallback iframe{flex:1;min-height:0}
 .leaf-pdf-canvas{position:absolute;inset:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:12px;background:var(--dsw-alias-bg-layer-2)}
 .leaf-pdf-page{position:relative;flex:none;margin:0 auto;background:#fff;box-shadow:0 4px 18px #0000002e}
 .leaf-pdf-page img{width:100%;height:100%;display:block;user-select:none;pointer-events:none}
@@ -671,6 +673,14 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
     /** Workspaces whose minimal-document probe already ran in this page life. */
     const probedWorkspaces = new Set()
+    /** In-page UI state kept across panel unmounts (chat <-> workbench). */
+    const panelMemory = new Map()
+    /** Per-workspace editor scroll offsets, kept across panel unmounts. */
+    const editorScrollMemory = new Map()
+    /** PDF page text geometry, kept across panel unmounts. */
+    const pdfTextMemory = new Map()
+    /** Per-workspace PDF scroll offsets. */
+    const pdfScrollMemory = new Map()
 
     /** Small observable store shared by the sidebar/context-menu entries and the panel. */
     function createLeafStore() {
@@ -986,15 +996,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     /** Virtualized textarea editor with a themed syntax layer. */
-    function LatexEditor({ tab, jump, selection, onChange, onSave, onCompile, onSelectionChange, t }) {
+    function LatexEditor({ tab, jump, selection, workspace, onChange, onSave, onCompile, onSelectionChange, t }) {
       const textareaRef = useRef(null)
       const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
       const [scrollLeft, setScrollLeft] = useState(0)
       const [viewport, setViewport] = useState(640)
       const [composition, setComposition] = useState(false)
-      const scrollMemory = useRef(new Map())
-      const lastPath = useRef(tab?.path)
+      const scrollKey = workspace === null || workspace === undefined || tab?.path === undefined ? null : `${workspace}::${tab.path}`
+      const lastKey = useRef(scrollKey)
       const [findOpen, setFindOpen] = useState(false)
       const [findText, setFindText] = useState('')
       const [cursor, setCursor] = useState({ line: 1, column: 1 })
@@ -1026,16 +1036,16 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       useEffect(() => {
         const node = textareaRef.current
         if (node === null) return
-        if (lastPath.current !== undefined && lastPath.current !== tab?.path) {
-          scrollMemory.current.set(lastPath.current, scrollTop)
+        if (lastKey.current !== null && lastKey.current !== scrollKey) {
+          editorScrollMemory.set(lastKey.current, scrollTop)
         }
-        lastPath.current = tab?.path
-        const saved = tab?.path === undefined ? 0 : (scrollMemory.current.get(tab.path) ?? 0)
+        lastKey.current = scrollKey
+        const saved = scrollKey === null ? 0 : (editorScrollMemory.get(scrollKey) ?? 0)
         node.scrollTop = saved
         node.scrollLeft = 0
         setScrollTop(saved)
         setScrollLeft(0)
-      }, [tab?.path])
+      }, [tab?.path, workspace, scrollKey])
 
       useEffect(() => {
         if (jump === null || jump === undefined || tab === undefined || jump.path !== tab.path) return
@@ -1241,7 +1251,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               onScroll: (event) => {
                 setScrollTop(event.target.scrollTop)
                 setScrollLeft(event.target.scrollLeft)
-                if (tab?.path !== undefined) scrollMemory.current.set(tab.path, event.target.scrollTop)
+                if (scrollKey !== null) editorScrollMemory.set(scrollKey, event.target.scrollTop)
               },
               onKeyDown,
               onKeyUp: updateCursor,
@@ -1342,18 +1352,34 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
      */
     function PdfCanvas({ workspace, page, fit, url, version, t, onLocate, onPages }) {
       const hostRef = useRef(null)
-      const [data, setData] = useState(null)
+      const pageNumber = Math.max(1, Math.round(Number(page) || 1))
+      const cacheKey = workspace === null ? null : `${workspace}|${version ?? ''}|${pageNumber}`
+      const [data, setData] = useState(() => (cacheKey === null ? null : pdfTextMemory.get(cacheKey) ?? null))
       const [fallback, setFallback] = useState(false)
       const [box, setBox] = useState({ width: 0, height: 0 })
-      const pageNumber = Math.max(1, Math.round(Number(page) || 1))
 
       useEffect(() => {
         if (workspace === null || url === null) return undefined
+        const cached = cacheKey === null ? undefined : pdfTextMemory.get(cacheKey)
+        if (cached !== undefined) {
+          setData(cached)
+          setFallback(false)
+          onPages?.(Number(cached.pages) || 0)
+          return undefined
+        }
         const controller = new AbortController()
         setData(null)
         setFallback(false)
         api(`/pdf/text?${workspaceQuery(workspace, { page: String(pageNumber), v: String(version ?? '') })}`, { signal: controller.signal })
           .then((payload) => {
+            if (!Array.isArray(payload?.words) || payload.words.length === 0) {
+              setFallback(true)
+              return
+            }
+            if (cacheKey !== null) {
+              pdfTextMemory.set(cacheKey, payload)
+              while (pdfTextMemory.size > 32) pdfTextMemory.delete(pdfTextMemory.keys().next().value)
+            }
             setData(payload)
             onPages?.(Number(payload.pages) || 0)
           })
@@ -1361,7 +1387,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             if (error?.name !== 'AbortError') setFallback(true)
           })
         return () => controller.abort()
-      }, [workspace, url, pageNumber, version, onPages])
+      }, [workspace, url, pageNumber, version, onPages, cacheKey])
 
       useEffect(() => {
         const node = hostRef.current
@@ -1374,12 +1400,21 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         return () => observer.disconnect()
       }, [])
 
+      useEffect(() => {
+        const node = hostRef.current
+        if (node === null || data === null || cacheKey === null) return
+        node.scrollTop = pdfScrollMemory.get(cacheKey) ?? 0
+      }, [data, cacheKey])
+
       if (url === null) return null
       if (fallback) {
-        return h('iframe', {
-          title: t('paper.title'),
-          src: `${url}#page=${pageNumber}&zoom=${fit === 'page' ? 'page-fit' : 'page-width'}&toolbar=0&navpanes=0&statusbar=0&messages=0`,
-        })
+        return h('div', { className: 'leaf-pdf-fallback' },
+          h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.textUnavailable'))),
+          h('iframe', {
+            title: t('paper.title'),
+            src: `${url}#page=${pageNumber}&zoom=${fit === 'page' ? 'page-fit' : 'page-width'}&toolbar=0&navpanes=0&statusbar=0&messages=0`,
+          }),
+        )
       }
       if (data === null) {
         return h('div', { className: 'leaf-pdf-canvas', ref: hostRef },
@@ -1393,23 +1428,23 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         : widthScale
       const width = Math.max(1, data.width * scale)
       const height = Math.max(1, data.height * scale)
-      const locate = () => {
-        const selection = window.getSelection()
-        if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return
-        for (const node of [selection.anchorNode, selection.focusNode]) {
-          const element = node?.nodeType === 3 ? node.parentElement : node
-          const word = element?.closest?.('.leaf-pdf-word')
-          if (word === undefined || word === null) continue
-          onLocate?.({
-            page: Number(word.dataset.page),
-            x: Number(word.dataset.x),
-            y: Number(word.dataset.y),
-          })
-          return
-        }
+      const locate = (event) => {
+        const word = event.target?.closest?.('.leaf-pdf-word')
+        if (word === undefined || word === null) return
+        onLocate?.({
+          page: Number(word.dataset.page),
+          x: Number(word.dataset.x),
+          y: Number(word.dataset.y),
+        })
       }
-      return h('div', { className: 'leaf-pdf-canvas', ref: hostRef },
-        h('div', { className: 'leaf-pdf-page', style: { width, height }, onMouseUp: locate },
+      return h('div', {
+        className: 'leaf-pdf-canvas',
+        ref: hostRef,
+        onScroll: (event) => {
+          if (cacheKey !== null) pdfScrollMemory.set(cacheKey, event.currentTarget.scrollTop)
+        },
+      },
+        h('div', { className: 'leaf-pdf-page', style: { width, height }, onDoubleClick: locate, title: t('paper.locateHint') },
           h('img', {
             src: pdfPageUrl(workspace, pageNumber, version),
             alt: '',
@@ -1656,6 +1691,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [saving, setSaving] = useState(null)
       const alive = useRef(true)
       const autoOpenedRef = useRef('')
+      const restoredRef = useRef('')
+      const skipMemorySave = useRef(false)
+      const restoringSelection = useRef(false)
       const viewRef = useRef({ tabs, activeTabPath, expanded, preview, pdfPage })
       const tabsRef = useRef(tabs)
       const expandedRef = useRef(expanded)
@@ -1697,6 +1735,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }, [openRequest?.at])
 
       useEffect(() => {
+        if (restoringSelection.current) {
+          restoringSelection.current = false
+          return
+        }
         setSelection(null)
       }, [activeTabPath])
 
@@ -1720,6 +1762,45 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }, [activePath])
 
       const workspacePath = activeWorkspace?.path ?? (activePath !== '' ? activePath : null)
+
+      // Coming back from a chat reuses the tab set, active file, PDF page and
+      // selection instead of refetching and auto-opening the main document.
+      useEffect(() => {
+        if (workspacePath === null || restoredRef.current === workspacePath) return
+        restoredRef.current = workspacePath
+        const saved = panelMemory.get(workspacePath)
+        if (saved === undefined) return
+        skipMemorySave.current = true
+        restoringSelection.current = saved.selection !== null && saved.selection !== undefined && saved.activeTabPath !== activeTabPath
+        setTabs(Array.isArray(saved.tabs) ? saved.tabs : [])
+        setActiveTabPath(saved.activeTabPath ?? null)
+        setPreview(saved.preview ?? null)
+        setPdfPage(saved.pdfPage ?? '1')
+        setPdfFit(saved.pdfFit ?? 'width')
+        setRightTab(saved.rightTab ?? 'pdf')
+        setAgentInput(saved.agentInput ?? '')
+        setSelection(saved.selection ?? null)
+        setDrawerOpenRaw(saved.drawerOpen === true ? '1' : '0')
+      }, [workspacePath])
+
+      useEffect(() => {
+        if (workspacePath === null || restoredRef.current !== workspacePath) return
+        if (skipMemorySave.current) {
+          skipMemorySave.current = false
+          return
+        }
+        panelMemory.set(workspacePath, {
+          tabs,
+          activeTabPath,
+          preview,
+          pdfPage,
+          pdfFit,
+          rightTab,
+          agentInput,
+          selection,
+          drawerOpen: boolStored(drawerOpenRaw, false),
+        })
+      }, [workspacePath, tabs, activeTabPath, preview, pdfPage, pdfFit, rightTab, agentInput, selection, drawerOpenRaw])
 
       // "Available" means a minimal document compiled, not merely that binaries
       // exist. Probe once per page life in the background so the first open is
@@ -1924,6 +2005,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       useEffect(() => {
         if (workspacePath === null || state === null) return
         if (tabs.length > 0 || activeTabPath !== null) return
+        const cached = panelMemory.get(workspacePath)
+        if (Array.isArray(cached?.tabs) && cached.tabs.length > 0) return
         if (openRequest?.file !== null && openRequest?.file !== undefined) return
         const main = state.project?.mainDocument
         if (typeof main !== 'string' || main === '') return
@@ -2097,25 +2180,33 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [openFile])
 
+      const jumpToSource = useCallback(async ({ file, line }) => {
+        if (workspacePath === null) return
+        const existing = tabsRef.current.find((tab) => tab.path === file)
+        if (existing !== undefined) {
+          setActiveTabPath(file)
+          setPreview(null)
+        } else {
+          await openFile({ path: file, name: basename(file), extension: extOf(file), mtime: 0, size: 0 })
+        }
+        setJump({ path: file, line, at: Date.now() })
+      }, [workspacePath, openFile])
+
       const locateFromPdf = useCallback(async ({ page, x, y }) => {
         if (workspacePath === null) return
         try {
           const query = workspaceQuery(workspacePath, { page: String(page), x: String(x), y: String(y) })
           const result = await api(`/synctex/inverse?${query}`)
           if (typeof result?.file !== 'string' || result.file === '') throw new Error('SyncTeX did not return a source file.')
-          const existing = tabsRef.current.find((tab) => tab.path === result.file)
-          if (existing !== undefined) {
-            setActiveTabPath(result.file)
-            setPreview(null)
-          } else {
-            await openFile({ path: result.file, name: basename(result.file), extension: extOf(result.file), mtime: 0, size: 0 })
+          if (result.file === activeTabPath) {
+            await jumpToSource(result)
+            return
           }
-          setJump({ path: result.file, line: result.line, at: Date.now() })
-          showToast(t('paper.located', { file: basename(result.file), line: result.line }))
+          setModal({ kind: 'locate', file: result.file, line: result.line })
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
-      }, [workspacePath, openFile, t])
+      }, [workspacePath, activeTabPath, jumpToSource, t])
 
       const fixWithAgent = useCallback(() => {
         if (activeWorkspace === null || activeWorkspace === undefined || receipt === null) return
@@ -2451,6 +2542,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       tab: activeTab,
                       jump,
                       selection,
+                      workspace: workspacePath,
                       t,
                       onChange: (content) => updateTab(activeTab.path, content),
                       onSave: () => saveTab(activeTab.path),
@@ -2581,6 +2673,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           workspaces: workspaceItems,
           activePath: workspacePath,
           onWorkspace: setActivePath,
+          onJump: jumpToSource,
         }),
       )
     }
@@ -2595,7 +2688,30 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       if (modal.kind === 'init') return h(InitModal, { ...context })
       if (modal.kind === 'settings') return h(SettingsModal, { ...context })
       if (modal.kind === 'env') return h(EnvironmentModal, { ...context, modal })
+      if (modal.kind === 'locate') return h(LocateModal, { ...context, modal })
       return null
+    }
+
+    function LocateModal({ modal, onClose, onJump, t }) {
+      return h(Modal, {
+        title: t('locate.title'),
+        onClose,
+        actions: [
+          h('button', { key: 'c', type: 'button', className: 'leaf-btn', onClick: onClose }, t('modal.cancel')),
+          h('button', {
+            key: 'o',
+            type: 'button',
+            className: 'leaf-btn primary',
+            onClick: () => {
+              const target = { file: modal.file, line: modal.line }
+              onClose()
+              onJump(target)
+            },
+          }, t('locate.open')),
+        ],
+      },
+        h('p', { style: { margin: 0, color: 'var(--dsw-alias-label-secondary)' } }, t('locate.body', { file: modal.file, line: modal.line })),
+      )
     }
 
     function NewFileModal({ onClose, onCreateFile, project, t }) {
