@@ -1427,6 +1427,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         ? Math.min(availableWidth / data.width, availableHeight / data.height)
         : Math.min(2.2, Math.max(0.1, Math.max(120, box.width) / contentWidth))
       const scale = Math.min(5, Math.max(0.05, baseScale * (zoom || 1)))
+      const devicePixelRatio = typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio || 1)
+      const renderScale = Math.min(5, Math.max(2, Math.ceil(scale * devicePixelRatio)))
       const width = Math.max(1, data.width * scale)
       const height = Math.max(1, data.height * scale)
       const marginLeft = fit === 'page'
@@ -1450,7 +1452,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       },
         h('div', { className: 'leaf-pdf-page', style: { width, height, marginLeft }, onDoubleClick: locate, title: t('paper.locateHint') },
           h('img', {
-            src: pdfPageUrl(workspace, pageNumber, version),
+            src: pdfPageUrl(workspace, pageNumber, version, renderScale),
             alt: '',
             draggable: false,
           }),
