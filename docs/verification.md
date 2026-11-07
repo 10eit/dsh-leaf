@@ -1,0 +1,134 @@
+# 安装与验证记录
+
+环境：macOS · DeepSeek Harness 0.2.2-rc.1（Web/Desktop，profile `desktop`）· TeX Live 2026 basic（`/usr/local/texlive/2026basic`，`/Library/TeX/texbin` 已加入 PATH）。
+
+## 1. 安装
+
+通过插件管理器的 `install_bundle` 以本地目录安装（等价于 `dsh plugin --profile "$DSH_PROFILE" add /Users/yanlinfu/Documents/dsh-leaf`）：
+
+```json
+{"stage":"install","target":"dsh-leaf","enabled":true,"changed":true,
+ "packageResult":{"exitCode":0,"output":"+ dsh-leaf 0.1.0 <- ../../../Documents/dsh-leaf"}}
+```
+
+首次安装时 Host 半在 `ctx.get('tools')` 上报错：
+
+```
+dsh-leaf: Error: cannot get property "tools" without inject
+```
+
+修正为 `ctx.inject(['tools', 'workingDirectory'], …)` 与 `ctx.inject(['systemPrompt'], …)` 后重新启用：
+
+```json
+{"stage":"enable","target":"include:dsh-leaf","enabled":true,"changed":true,
+ "application":"applied","warnings":[]}
+```
+
+插件行状态：`include:dsh-leaf` → `enabled: true`, `fiberPhase: active`。
+
+## 2. Host 半
+
+### 2.1 工具注册
+
+`latex_project(action="status")` 实际输出：
+
+```text
+Workspace: /Users/yanlinfu/Documents/dsh-leaf/examples/paper
+Main document: main.tex
+Engine: xelatex | mode: fast | auto compile: true
+Environment: detected (available)
+Main candidates: main.tex
+Figures directory: figures
+```
+
+`latex_build(mode="full")` 对示例论文完整编译（含 ctex 中文、`\includegraphics` PDF 图、bibtex 参考文献）：
+
+```text
+Build warning in 2.9s (xelatex, full).
+Main document: main.tex
+Warnings (4): ctex 的 LaTeX release 提示（不影响产物）
+```
+
+产物：`.dsh-leaf/build/full/main.pdf`（2 页）。警告是 ctex 对 LaTeX release 日期的提示，不是排版错误。
+
+### 2.2 SyncTeX
+
+```text
+synctex view -i 12:1:<abs>/sections/introduction.tex -o <abs>/.dsh-leaf/build/full/main.pdf
+→ { page: 1, x: 168.04, y: 642.36 }
+```
+
+### 2.3 环境检测
+
+```text
+status: detected, available: true
+xelatex / pdflatex / latexmk / bibtex / biber / tlmgr / synctex: 全部找到
+```
+
+「最小示例验证」由 `POST /dsh-leaf/env/probe` 在临时目录真实编译 `\documentclass{article}` 文档，成功后才把状态置为 `ready`。
+
+## 3. Client 半
+
+`dsh-client-modules` 的 boot graph 包含：
+
+```json
+{"id":"dsh-leaf","url":"plugins/??dsh-leaf/client.js&rev=0821d30aef47","rev":"0821d30aef47"}
+```
+
+且 dsh-leaf 位于 `application` batch（与其它客户端插件同批加载）。使用图中的精确 rev 取回 bundle：
+
+```text
+GET /plugins/??dsh-leaf/client.js&rev=0821d30aef47
+→ 200, text/javascript, 121035 bytes
+```
+
+bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，内容包含最新代码（`paper.exportFailed`、`jump` 定位等）。
+
+### 3.1 无浏览器环境下的替代验证
+
+- **模块格式**：加载 `client.js`，校验 `window.__ModuleLoader__.load` 的 id 与 factory，调用 factory(require) 得到 `{ inject, apply }`。
+- **注册表**：用 mock ctx 调用 `apply`，确认注册了 `main/leaf`、`sidebar.panellist/leaf`、`contextMenu.icon/dsh-leaf.open`、两个工作区菜单动作与 `dsh-leaf.open` 快捷键；样式节点只注入一次。
+- **渲染**：用 `react-dom/server` 渲染面板（空工作区 / 有工作区但尚未取到 state 两种输入），无异常，输出包含工具栏、文件树、论文 PDF 面板。
+- **静态检查**：`npm run check` 对所有 JS 文件通过。
+
+### 3.2 尚未完成的验证
+
+**当前打开的页面需要刷新一次**：dsh-leaf 是在页面加载之后安装的客户端 bundle，不会自动注入已存在的页面；HMR 只对已加载的插件生效。刷新后应能：
+
+1. 在左侧「插件 / 自动化任务」同一栏看到叶子图标；
+2. 点击后进入 dsh-leaf，看到示例项目或空项目引导；
+3. 右键工作区看到「在 dsh-leaf 中打开 / 关闭 dsh-leaf」；
+4. `⌘⇧L` 打开面板。
+
+当前 agent 环境没有浏览器控制能力，**未对页面截图或做视觉验收**。刷新后若发现渲染问题，请把控制台报错（`slot entry crashed in 'main'` 等）反馈，我会按实际错误修正。
+
+## 4. 自动化测试
+
+```text
+$ npm test
+# tests 17
+# pass 17
+# fail 0
+```
+
+覆盖：
+
+- 路径围栏、主文档识别与候选歧义、项目记录持久化与显式关闭；
+- 文件树隐藏规则、文本读写与外部修改冲突；
+- 模板只增不覆盖、新建 TeX 文件拒绝覆盖；
+- LaTeX 日志解析（含 TeX 79 列换行把 `file:line:` 截断的情况）、缺失宏包提示、日志尾部裁剪；
+- 真实 xelatex 编译成功 / 失败诊断；
+- HTTP 路由：state/tree/new/file 往返、401 认证围栏、未注册工作区 403、编译产物 PDF、Range 206。
+
+## 5. 复现验证
+
+```sh
+cd /Users/yanlinfu/Documents/dsh-leaf
+npm run check
+npm test
+
+# 编译示例论文
+# 在 dsh 中调用：latex_build(mode="full", workspace=".../examples/paper")
+```
+
+重新加载 Host 改动：插件管理器对 `dsh-leaf` 关闭 → 启用。客户端改动：刷新页面；boot graph 的 rev 会随文件 mtime 变化（`latex_project(action="diagnostics")` 可读取当前 Client graph）。
