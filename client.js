@@ -2673,14 +2673,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function SettingsModal({ onClose, onPatch, project, candidates, environment, onProbe, onRedetect, onClean, workspaces, activePath, onWorkspace, t }) {
+    function SettingsModal({ onClose, onPatch, project, candidates, workspaces, activePath, onWorkspace, t }) {
       const [main, setMain] = useState(project?.mainDocument ?? '')
       const [cwd, setCwd] = useState(project?.buildCwd ?? '')
-      const [enabled, setEnabled] = useState(project?.enabled !== false)
-      const [autoCompile, setAutoCompile] = useState(project?.autoCompile !== false)
       const [workspace, setWorkspace] = useState(activePath ?? '')
       const save = () => {
-        onPatch({ mainDocument: main === '' ? null : main, buildCwd: cwd === '' ? null : cwd, enabled, autoCompile })
+        onPatch({ mainDocument: main === '' ? null : main, buildCwd: cwd === '' ? null : cwd })
         if (workspace !== '' && workspace !== activePath) onWorkspace?.(workspace)
         onClose()
       }
@@ -2711,18 +2709,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           h('label', null, t('modal.buildCwd'),
             h('input', { className: 'leaf-input', value: cwd, onChange: (event) => setCwd(event.target.value), placeholder: '.' }),
             h('span', { className: 'leaf-hint' }, t('modal.buildCwdHint')),
-          ),
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-            h(Switch, { checked: autoCompile, onChange: setAutoCompile, label: t('toolbar.auto') }),
-            h(Switch, { checked: enabled, onChange: setEnabled, label: t('modal.enable') }),
-          ),
-          h('span', { className: 'leaf-hint' }, t('modal.enableHint')),
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
-            h('span', { className: `leaf-dot ${environment?.status === 'ready' ? 'ok' : environment?.status === 'missing' || environment?.status === 'failed' ? 'bad' : 'warn'}` }),
-            h('span', { className: 'leaf-hint', style: { flex: 1 } }, `${t('toolbar.env')}: ${environment?.status ?? t('common.unknown')}`),
-            h('button', { type: 'button', className: 'leaf-btn small', onClick: onProbe }, t('env.probe')),
-            h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onRedetect }, t('env.redetect')),
-            h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onClean }, t('toolbar.clean')),
           ),
         ),
       )
