@@ -148,7 +148,7 @@ dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模�
 ## 8. 开发与测试
 
 ```sh
-npm test          # 18 个测试：单元、日志解析、真实编译、HTTP/Range/认证围栏
+npm test          # 25 个测试：单元、日志解析、真实编译、HTTP/Range/认证围栏、后台生成、客户端渲染
 npm run check     # 所有 JS 文件语法检查
 ```
 

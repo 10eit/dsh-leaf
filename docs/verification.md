@@ -59,7 +59,18 @@ synctex view -i 12:1:<abs>/sections/introduction.tex -o <abs>/.dsh-leaf/build/fu
 → { page: 1, x: 168.04, y: 642.36 }
 ```
 
-### 2.3 环境检测
+### 2.3 后台写作调用
+
+后台生成走 Host 的原生默认模型（`ctx.llm.stream`），用工具探针验证真实调用：
+
+```text
+latex_project(action="assist_probe", instruction="Reply with exactly: OK")
+→ deepseek-flash: OK
+```
+
+客户端 `/dsh-leaf/assist` 复用同一个函数；输入条把当前文件/选区/主文档发给它，结果内联显示，写回时检查选区原文是否变化。
+
+### 2.4 环境检测
 
 ```text
 status: detected, available: true
@@ -107,14 +118,15 @@ bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，可�
 
 ```text
 $ npm test
-# tests 18
-# pass 18
+# tests 25
+# pass 25
 # fail 0
 ```
 
 覆盖：
 
 - 客户端 bundle：加载 `client.js`、校验 `__ModuleLoader__` 工厂、apply 注册项（main / 侧栏 / 右键 / 快捷键）与空/有工作区两种面板渲染；
+- 后台生成：prompt 组装、文本增量拼接、错误/空答案、文件截断，以及 `/assist` 路由契约；
 - 路径围栏、主文档识别与候选歧义、项目记录持久化与显式关闭；
 - 文件树隐藏规则、文本读写与外部修改冲突；
 - 模板只增不覆盖、新建 TeX 文件拒绝覆盖；
