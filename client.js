@@ -1565,6 +1565,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       workspace,
                       page,
                       fit,
+                      zoom,
+                      onZoomStep: stepZoom,
                       url,
                       version: pdfVersion,
                       t,
