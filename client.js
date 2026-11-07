@@ -573,6 +573,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /** In-memory per-workspace panel cache so switching to chat and back restores tabs. */
     const panelCache = new Map()
 
+    /** Workspaces whose minimal-document probe already ran in this page life. */
+    const probedWorkspaces = new Set()
+
     /** Small observable store shared by the sidebar/context-menu entries and the panel. */
     function createLeafStore() {
       let snapshot = { path: null, file: null, at: 0 }
@@ -1414,6 +1417,26 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }, [activePath])
 
       const workspacePath = activeWorkspace?.path ?? (activePath !== '' ? activePath : null)
+
+      // "Available" means a minimal document compiled, not merely that binaries
+      // exist. Probe once per page life in the background so the first open is
+      // never blocked on it.
+      useEffect(() => {
+        if (workspacePath === null || state?.environment?.status !== 'detected') return
+        if (probedWorkspaces.has(workspacePath)) return
+        probedWorkspaces.add(workspacePath)
+        let cancelled = false
+        api('/env/probe', { body: {} })
+          .then((environmentPayload) => {
+            if (cancelled) return
+            setState((previous) => (previous === null ? previous : { ...previous, environment: environmentPayload }))
+          })
+          .catch(() => {})
+        return () => {
+          cancelled = true
+        }
+      }, [workspacePath, state?.environment?.status])
+
 
       const refreshState = useCallback(async (options = {}) => {
         if (workspacePath === null) return null
