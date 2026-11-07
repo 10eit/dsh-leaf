@@ -602,7 +602,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-switch .leaf-track:after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .leaf-switch input:checked+.leaf-track{background:var(--dsw-alias-brand-primary)}
 .leaf-switch input:checked+.leaf-track:after{transform:translateX(12px)}
-.leaf-toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--dsw-alias-bg-overlay,#222);color:var(--dsw-alias-label-primary-inverted,#fff);padding:7px 12px;border-radius:8px;font-size:12px;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:80%;text-align:center}
+.leaf-toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:var(--dsw-alias-bg-overlay,#222);color:var(--dsw-alias-label-primary-inverted,#fff);padding:10px 16px;border-radius:10px;font-size:13.5px;line-height:1.45;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:86%;text-align:center}
 .leaf-modal-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:6px}
 .leaf-radio{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;border:1px solid transparent}
 .leaf-radio:hover{background:var(--dsw-alias-interactive-bg-hover)}
@@ -1497,7 +1497,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       )
     }
 
-    function PaperPane({ url, stale, page, fit, zoom, onZoom, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent, workspace, pdfVersion, onLocate }) {
+    function PaperPane({ url, stale, page, fit, zoom, onZoom, onPage, onFit, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent, workspace, pdfVersion, onLocate }) {
       const [pageCount, setPageCount] = useState(0)
       const normalizeZoom = (value) => Math.min(3, Math.max(0.5, Math.round(value * 100) / 100))
       const stepZoom = useCallback((direction) => {
@@ -1562,7 +1562,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   h('option', { value: 'width' }, t('paper.fitWidth')),
                   h('option', { value: 'page' }, t('paper.fitPage')),
                 ),
-                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 16 })),
                 url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 16 })),
               )
             : null,
@@ -1625,14 +1624,14 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             className: 'leaf-btn small ghost',
             onClick: async () => {
               const snippet = `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{${preview.path}}\n  \\caption{}\n  \\label{fig:${basename(preview.name).replace(/\.[^.]+$/, '')}}\n\\end{figure}`
-              if (await copy(snippet)) onToast?.(t('preview.inserted'))
+              await copy(snippet)
             },
           }, h(Icon, { name: 'copy' }), t('preview.insert')) : null,
           h('button', {
             type: 'button',
             className: 'leaf-btn small ghost',
             onClick: async () => {
-              if (await copy(preview.path)) onToast?.(t('preview.pathCopied'))
+              await copy(preview.path)
             },
           }, h(Icon, { name: 'copy' }), t('preview.copyPath')),
           h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('preview.reveal'), onClick: () => api('/reveal', { body: { workspace, path: preview.path } }).catch(() => {}) }, h(Icon, { name: 'location' })),
@@ -2122,7 +2121,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const compile = useCallback(async (options = {}) => {
         if (workspacePath === null) return
         if (buildingRef.current) {
-          showToast(t('toast.busy'))
           return
         }
         buildingRef.current = true
@@ -2154,7 +2152,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           if (receipt.state !== undefined) setState(receipt.state)
           setPdfPage('1')
           setPdfReloadKey(Date.now())
-          if (receipt.status === 'success' || receipt.status === 'warning') showToast(`${t('status.success')} · ${(receipt.durationMs / 1000).toFixed(1)}${t('common.seconds')}`)
           return receipt
         } catch (error) {
           if (!alive.current) return
@@ -2171,7 +2168,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         try {
           const payload = await api('/clean', { body: { workspace: workspacePath } })
           if (payload.state !== undefined) setState(payload.state)
-          showToast(t('toolbar.clean'))
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
@@ -2180,7 +2176,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const exportPdf = useCallback(async () => {
         if (workspacePath === null) return
         if (buildingRef.current) {
-          showToast(t('toast.busy'))
           return
         }
         const receipt = await compile({ mode: 'full' })
@@ -2291,8 +2286,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         if (workspacePath === null) return
         const instruction = agentInput.trim()
         if (instruction === '') {
-          showToast(t('agent.emptyInstruction'))
-          return
+            return
         }
         const sourceSelection = selection !== null && (activeTab === null || selection.path === activeTab.path)
           ? selection
@@ -2345,14 +2339,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           updateTab(activeTab.path, `${activeTab.content.replace(/\s*$/, '')}\n\n${assist.text}\n`)
         }
         setAssist(null)
-        showToast(t('agent.applied'))
       }, [assist, activeTab, t, showToast, updateTab])
 
       const copyAssist = useCallback(async () => {
         if (assist?.status !== 'done') return
         try {
           await navigator.clipboard.writeText(assist.text)
-          showToast(t('menu.copySnippetDone'))
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
@@ -2369,7 +2361,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           }
           await refreshState({ quiet: true })
           await openFile({ path: receipt.path, name: basename(receipt.path), extension: 'tex', mtime: 0, size: 0 })
-          showToast(t('editor.saved'))
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
@@ -2385,7 +2376,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           await loadDir('')
           await refreshState({ quiet: true })
           await openFile({ path: 'main.tex', name: 'main.tex', extension: 'tex', mtime: 0, size: 0 })
-          if (receipt.skipped?.length > 0) showToast(`${t('modal.initHint')} (${receipt.skipped.join(', ')})`)
         } catch (error) {
           showToast(`${t('toast.error')}: ${error.message}`)
         }
@@ -2679,7 +2669,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             onZoom: setPdfZoom,
             onPage: setPdfPage,
             onFit: setPdfFit,
-            onReload: () => setPdfReloadKey(Date.now()),
             onExport: exportPdf,
             t,
             style: paperWidth > 0 ? { width: paperWidth } : {},
