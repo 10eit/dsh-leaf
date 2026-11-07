@@ -63,6 +63,7 @@ window.__ModuleLoader__.load({
       'tree.showAux': '显示编译辅助文件',
       'tree.refresh': '重新读取',
       'tree.empty': '目录为空',
+      'tree.truncated': '目录过大，仅显示前 500 项；请用搜索或在访达中查看。',
       'tree.loading': '读取中…',
       'tree.error': '读取失败',
       'tree.reveal': '在访达中显示',
@@ -233,6 +234,7 @@ window.__ModuleLoader__.load({
       'tree.showAux': 'Show build artifacts',
       'tree.refresh': 'Reload',
       'tree.empty': 'Empty directory',
+      'tree.truncated': 'Large directory: showing the first 500 entries. Use search or Finder for the rest.',
       'tree.loading': 'Loading…',
       'tree.error': 'Failed to load',
       'tree.reveal': 'Reveal in Finder',
@@ -1149,6 +1151,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         if (bucket.status === 'ready' && (bucket.entries ?? []).length === 0) {
           rows.push(h('div', { key: `${dirPath}:empty`, className: 'leaf-tree-hint' }, t('tree.empty')))
         }
+        if (bucket.truncated === true) {
+          rows.push(h('div', { key: `${dirPath}:truncated`, className: 'leaf-tree-hint' }, t('tree.truncated')))
+        }
         return rows
       }
       return h('div', { className: 'leaf-tree', style: width === undefined ? undefined : { width } },
@@ -1478,7 +1483,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             const before = previous[dirPath]
             const same = before?.entries !== undefined && JSON.stringify(before.entries) === JSON.stringify(payload.entries)
             if (same && before.status === 'ready') return previous
-            return { ...previous, [dirPath]: { status: 'ready', entries: payload.entries } }
+            return { ...previous, [dirPath]: { status: 'ready', entries: payload.entries, truncated: payload.truncated === true } }
           })
         } catch (error) {
           if (error.name === 'AbortError') return
@@ -1503,11 +1508,14 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       // external writes and agent-produced figures visible without scanning the tree.
       useEffect(() => {
         if (workspacePath === null) return undefined
+        let tick = 0
         const timer = setInterval(() => {
+          tick += 1
           const openDirs = ['', ...[...expanded].filter((path) => dirsRef.current[path] !== undefined)]
           for (const dir of openDirs) loadDir(dir, { quiet: true })
-          refreshState({ quiet: true })
-        }, 2600)
+          // Project state changes more slowly than the tree; refresh it every other tick.
+          if (tick % 2 === 0) refreshState({ quiet: true })
+        }, 1500)
         return () => clearInterval(timer)
       }, [workspacePath, expanded, dirs, loadDir, refreshState])
 
