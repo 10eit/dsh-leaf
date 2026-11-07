@@ -20,7 +20,7 @@
 | 资源预览 | PNG/JPG/GIF/WebP/SVG/PDF 应用内预览；显示相对路径、大小、更新时间；复制相对路径、复制 `\includegraphics` 片段、在访达中显示 |
 | 环境 | 在后台检测发行版、pdflatex/xelatex/latexmk/bibtex/biber/synctex；用最小示例做真实编译验证；检测/验证失败给出非阻塞说明，不自动下载 |
 | 模板 | 最小中文项目（ctex + XeLaTeX）与最小英文项目（pdfLaTeX）；只新增缺失文件，不覆盖用户内容 |
-| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics）与 `latex_build` 两个原生工具，返回与 UI 相同的结构化构建结果；编辑器可把当前文件/选区连同文件名与行号直接带到原生写作会话的输入框 |
+| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics）与 `latex_build` 两个原生工具，返回与 UI 相同的结构化构建结果；编辑器可把当前文件/选区连同文件名与行号直接带到原生写作会话的输入框；构建失败面板可一键把错误摘要、缺失依赖和日志尾部交给 Writing Agent 修复 |
 | 定位 | 源码 → PDF 的 SyncTeX 正向定位（编辑器按钮）；PDF → 源码的反向查询 API 已提供（见 §6） |
 
 ## 2. 安装

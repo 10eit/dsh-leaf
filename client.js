@@ -112,6 +112,10 @@ window.__ModuleLoader__.load({
       'log.show': '展开构建输出',
       'log.hide': '收起构建输出',
       'log.full': '查看完整日志',
+      'log.fixAgent': '交给 Writing Agent 修复',
+      'log.fixPromptTitle': '这轮 LaTeX 编译失败，请作为 Writing Agent 帮我定位并修复。',
+      'log.fixPromptMeta': '主文档：{main}；引擎：{engine}；模式：{mode}',
+      'log.fixPromptErrors': '错误与警告：',
       'status.idle': '未编译',
       'status.dirty': '源码已更新',
       'status.building': '编译中',
@@ -275,6 +279,10 @@ window.__ModuleLoader__.load({
       'log.show': 'Show build output',
       'log.hide': 'Hide build output',
       'log.full': 'View full log',
+      'log.fixAgent': 'Ask the Writing Agent to fix',
+      'log.fixPromptTitle': 'This LaTeX build failed. Act as my Writing Agent and fix it.',
+      'log.fixPromptMeta': 'Main document: {main}; engine: {engine}; mode: {mode}',
+      'log.fixPromptErrors': 'Errors and warnings:',
       'status.idle': 'Not compiled',
       'status.dirty': 'Sources changed',
       'status.building': 'Compiling',
@@ -1243,7 +1251,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /* Build log                                                          */
     /* ------------------------------------------------------------------ */
 
-    function LogPane({ open, receipt, onToggle, onOpenProblem, onFullLog, t, height }) {
+    function LogPane({ open, receipt, onToggle, onOpenProblem, onFullLog, onFixWithAgent, t, height }) {
       const [tab, setTab] = useState('problems')
       const errors = receipt?.errors ?? []
       const warnings = receipt?.warnings ?? []
@@ -1261,6 +1269,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           open ? h('button', { type: 'button', className: `leaf-btn small ${tab === 'problems' ? '' : 'ghost'}`, onClick: () => setTab('problems') }, `${t('log.problems')} ${problems.length}`) : null,
           open ? h('button', { type: 'button', className: `leaf-btn small ${tab === 'raw' ? '' : 'ghost'}`, onClick: () => setTab('raw') }, t('log.raw')) : null,
           open ? h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onFullLog }, t('log.full')) : null,
+          open && receipt !== null && (receipt.errors?.length > 0 || receipt.missing?.length > 0)
+            ? h('button', { type: 'button', className: 'leaf-btn small', onClick: onFixWithAgent }, t('log.fixAgent'))
+            : null,
         ),
         open ? h('div', { className: 'leaf-log-body' },
           receipt === null
@@ -1345,6 +1356,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
       const workspaceItems = workspaces ?? []
       const activeWorkspace = workspaceItems.find((item) => item.path === activePath) ?? null
+      const project = state?.project ?? null
+      const environment = state?.environment ?? null
+      const receipt = build.receipt ?? null
 
       useEffect(() => {
         if (openRequest?.path !== null && openRequest?.path !== undefined) {
@@ -1381,6 +1395,17 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           if (!alive.current) return null
           const serialized = JSON.stringify(payload)
           setState((previous) => (previous !== null && JSON.stringify(previous) === serialized ? previous : payload))
+          setBuild((previous) => {
+            const running = payload.buildQueue?.running === true || payload.buildQueue?.queued === true
+            if (running) return previous.status === 'building' ? previous : { status: 'building', receipt: previous.receipt }
+            if (previous.status === 'building') {
+              return { status: payload.project?.lastBuild?.status ?? 'idle', receipt: previous.receipt }
+            }
+            if (previous.receipt === null && previous.status === 'idle' && payload.project?.lastBuild !== null && payload.project?.lastBuild !== undefined) {
+              return { status: payload.project.lastBuild.status ?? 'idle', receipt: null }
+            }
+            return previous
+          })
           setLoadError(null)
           return payload
         } catch (error) {
@@ -1581,9 +1606,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         buildingRef.current = true
         setBuild((previous) => ({ ...previous, status: 'building' }))
         try {
-          await Promise.all(tabsRef.current
+          const saves = await Promise.all(tabsRef.current
             .filter((tab) => tab.content !== tab.savedContent)
             .map((tab) => saveTab(tab.path, { silent: true })))
+          if (saves.includes(false)) {
+            showToast(t('editor.saveFailed'))
+            return null
+          }
           const receipt = await api('/compile', {
             body: {
               workspace: workspacePath,
@@ -1695,6 +1724,27 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [workspacePath])
 
+      const fixWithAgent = useCallback(() => {
+        if (activeWorkspace === null || activeWorkspace === undefined || receipt === null) return
+        const lines = [
+          t('log.fixPromptTitle'),
+          '',
+          t('log.fixPromptMeta', {
+            main: project?.mainDocument ?? '—',
+            engine: project?.engine ?? '—',
+            mode: project?.mode ?? '—',
+          }),
+          '',
+          t('log.fixPromptErrors'),
+        ]
+        for (const error of (receipt.errors ?? []).slice(0, 12)) {
+          lines.push(`- ${error.file ?? 'document'}${error.line === null || error.line === undefined ? '' : `:${error.line}`}: ${error.message}`)
+        }
+        for (const item of (receipt.missing ?? []).slice(0, 8)) lines.push(`- ${item.name}: ${item.hint}`)
+        lines.push('', 'Log tail:', '```', String(receipt.logTail ?? '').slice(-3000), '```')
+        props.startWritingAgent?.(activeWorkspace.workspaceId, lines.join('\n'))
+      }, [activeWorkspace, receipt, project, t])
+
       const sendToAgent = useCallback((payload) => {
         if (activeWorkspace === null || activeWorkspace === undefined) return
         const header = activeWorkspace.title || basename(activeWorkspace.path)
@@ -1752,9 +1802,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [])
 
-      const project = state?.project ?? null
-      const environment = state?.environment ?? null
-      const receipt = build.receipt ?? null
       const buildStatus = build.status !== 'idle' ? build.status : (dirtyCount > 0 ? 'dirty' : (project?.lastBuild?.status ?? 'idle'))
       const pdfStale = (receipt !== null && (receipt.status === 'failed' || receipt.status === 'stopped' || receipt.status === 'timeout' || receipt.pdf?.stale === true)) || project?.lastBuild?.ok === false
       const pdfDraft = (receipt?.mode ?? project?.mode) === 'fast'
@@ -2001,6 +2048,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               onToggle: () => setLogOpenRaw((value) => !boolStored(value, true)),
               onOpenProblem: openProblem,
               onFullLog: () => window.open(new URL(`dsh-leaf/log?${workspaceQuery(workspacePath)}`, document.baseURI).href, '_blank'),
+              onFixWithAgent: fixWithAgent,
               t,
               height: 190,
             }),
