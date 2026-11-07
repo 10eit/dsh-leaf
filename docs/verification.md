@@ -78,7 +78,7 @@ latex_project(action="assist_probe", instruction="Reply with exactly: OK")
 workbench session session-18501068-71db-46c5-8323-0046dda1c41b (created)
 ```
 
-会话日志确认了 `session/title = "DSH-leaf 工作台"`、`turn/start`，以及 700ms 后的 `turn/end (aborted: user)`；workspace 存储中出现该 session、`pinnedSessionIds` 和工作区置顶记录。首次启用只消耗一个被立即取消的模型轮次，用来让会话从空白占位变成持久行。
+会话日志确认了 `session/title = "✏️DSH-leaf工作台"`、`turn/start`，以及 700ms 后的 `turn/end (aborted: user)`；workspace 存储中出现该 session、`pinnedSessionIds` 和工作区置顶记录。首次启用只消耗一个被立即取消的模型轮次，用来让会话从空白占位变成持久行。
 
 ### 2.5 PDF 文本层与反向定位
 
@@ -146,8 +146,8 @@ bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，可�
 
 ```text
 $ npm test
-# tests 27
-# pass 27
+# tests 28
+# pass 28
 # fail 0
 ```
 

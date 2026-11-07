@@ -62,6 +62,21 @@ async function harness(root, options = {}) {
   }
 }
 
+test('the plugin logo route serves the image', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-logo-'))
+  const server = await harness(dir)
+  try {
+    const response = await fetch(`${server.base}/dsh-leaf/logo`)
+    assert.equal(response.status, 200)
+    assert.match(response.headers.get('content-type') ?? '', /image\/png/)
+    const bytes = await response.arrayBuffer()
+    assert.ok(bytes.byteLength > 1000)
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('health, state, tree, and editor routes round-trip', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-routes-'))
   const server = await harness(dir)

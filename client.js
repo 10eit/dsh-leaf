@@ -24,7 +24,8 @@ window.__ModuleLoader__.load({
       drawer: 'dsh-leaf.drawer',
     }
     const PANEL_ID = 'leaf'
-    const WORKBENCH_TITLE = 'DSH-leaf 工作台'
+    const WORKBENCH_TITLE = '✏️DSH-leaf工作台'
+    const LEGACY_WORKBENCH_TITLES = ['DSH-leaf 工作台', 'DSH-leaf工作台']
     const MENU_OPEN = 'dsh-leaf.open'
 
     /* ------------------------------------------------------------------ */
@@ -777,6 +778,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return url.href
     }
 
+    function logoUrl() {
+      return new URL('dsh-leaf/logo', document.baseURI).href
+    }
+
     function pdfPageUrl(workspace, page, version, scale = 2) {
       const url = new URL('dsh-leaf/pdf/page', document.baseURI)
       url.search = workspaceQuery(workspace, { page: String(page), scale: String(scale), v: String(version ?? '') })
@@ -804,12 +809,32 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     function WorkbenchOpener({ useSessions, usePanelInfo, open }) {
       const active = useSessions((snapshot) => Object.values(snapshot.byId ?? {})
         .find((item) => (item.retainedBy?.mainView ?? 0) > 0) ?? null)
+      const legacy = useSessions((snapshot) => Object.values(snapshot.byId ?? {})
+        .find((item) => LEGACY_WORKBENCH_TITLES.includes(item.title)) ?? null)
       const panelId = usePanelInfo((info) => info.activePanelId)
+      const attempted = useRef(new Set())
+      const rename = useCallback((sessionId) => {
+        if (attempted.current.has(sessionId)) return
+        attempted.current.add(sessionId)
+        try {
+          ctx.sessions.using(sessionId, { source: 'workspaceOperation' }, async (reference) => {
+            await reference.binding.session.rename(WORKBENCH_TITLE)
+          }).catch(() => {})
+        } catch {
+          // old session may be archived or busy; the legacy title remains usable
+        }
+      }, [])
       useEffect(() => {
-        if (panelId === 'leaf') return
-        if (active?.title !== WORKBENCH_TITLE) return
-        open()
-      }, [active?.id, active?.title, panelId, open])
+        if (legacy === null || legacy === undefined) return
+        rename(legacy.id)
+      }, [legacy?.id, legacy?.title, rename])
+      useEffect(() => {
+        if (active === null || active === undefined) return
+        const isWorkbench = active.title === WORKBENCH_TITLE || LEGACY_WORKBENCH_TITLES.includes(active.title)
+        if (!isWorkbench) return
+        if (active.title !== WORKBENCH_TITLE) rename(active.id)
+        if (panelId !== 'leaf') open()
+      }, [active?.id, active?.title, panelId, open, rename])
       return null
     }
 
@@ -882,6 +907,25 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         default:
           return h('svg', common, h('circle', { cx: 8, cy: 8, r: 4 }))
       }
+    }
+
+    function LeafLogo({ size = 18 }) {
+      const [failed, setFailed] = useState(false)
+      if (failed) return h(LeafMark, { size })
+      return h('img', {
+        src: logoUrl(),
+        alt: '',
+        draggable: false,
+        onError: () => setFailed(true),
+        style: {
+          width: size,
+          height: size,
+          borderRadius: Math.max(4, Math.round(size * 0.24)),
+          objectFit: 'cover',
+          flex: 'none',
+          display: 'block',
+        },
+      })
     }
 
     function typeClass(name) {
@@ -1581,7 +1625,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               stale ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.stale'))) : null,
               h('div', { className: 'leaf-paper-body' },
                 url === null
-                  ? h('div', { className: 'leaf-paper-empty' }, h(LeafMark, { size: 30 }), h('strong', null, t('paper.empty')), h('span', null, t('paper.emptyHint')))
+                  ? h('div', { className: 'leaf-paper-empty' }, h(LeafLogo, { size: 30 }), h('strong', null, t('paper.empty')), h('span', null, t('paper.emptyHint')))
                   : h(PdfCanvas, {
                       workspace,
                       page,
@@ -2444,7 +2488,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return h('div', { className: 'leaf-root' },
         h('div', { className: 'leaf-toolbar' },
           h('div', { className: 'leaf-brand', title: workspacePath ?? '' },
-            h(LeafMark, { size: 18 }),
+            h(LeafLogo, { size: 18 }),
             h('span', null, 'dsh-leaf'),
           ),
           h('button', {
@@ -2940,11 +2984,11 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     function SidebarLeafIcon({ size = 18 }) {
-      return h('span', { style: { display: 'inline-flex', color: 'var(--dsw-alias-label-primary)' } }, h(LeafMark, { size }))
+      return h('span', { style: { display: 'inline-flex', color: 'var(--dsw-alias-label-primary)' } }, h(LeafLogo, { size }))
     }
 
     function MenuLeafIcon(props) {
-      return h('span', { style: { display: 'inline-flex', color: 'var(--dsw-alias-label-primary)' } }, h(LeafMark, { size: 16 }))
+      return h('span', { style: { display: 'inline-flex', color: 'var(--dsw-alias-label-primary)' } }, h(LeafLogo, { size: 16 }))
     }
 
     /**

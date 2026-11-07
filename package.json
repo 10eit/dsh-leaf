@@ -15,6 +15,7 @@
     "client.js",
     "cordis.patch.yml",
     "lib/*.js",
+    "assets/*.png",
     "locale/*.json",
     "icon.svg"
   ],
