@@ -490,14 +490,13 @@ window.__ModuleLoader__.load({
 .leaf-tab .leaf-close:hover{opacity:1;background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-editor-wrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
 .leaf-editor{position:relative;flex:1;min-height:0;display:flex;background:var(--dsw-alias-bg-base);overflow:hidden}
-.leaf-gutter{width:50px;flex:none;overflow:hidden;border-right:1px solid var(--dsw-alias-border-l1);position:relative;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px;line-height:22px;user-select:none}
-.leaf-gutter-inner{position:absolute;top:8px;left:0;right:0;will-change:transform}
-.leaf-lineno{height:22px;padding:0 8px 0 0;text-align:right;white-space:nowrap}
+.leaf-highlight{position:absolute;top:0;left:0;right:0;padding-top:8px;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;will-change:transform;color:var(--dsw-alias-label-primary);background:linear-gradient(to right,var(--dsw-alias-bg-layer-1) 0 50px,transparent 50px);tab-size:2}
+.leaf-flow-row{display:grid;grid-template-columns:50px 1fr;align-items:start;box-sizing:border-box}
+.leaf-lineno{box-sizing:border-box;height:22px;line-height:22px;padding:0 8px 0 0;text-align:right;white-space:nowrap;color:var(--dsw-alias-label-tertiary);user-select:none;background:var(--dsw-alias-bg-layer-1);border-right:1px solid var(--dsw-alias-border-l1)}
 .leaf-lineno.current{color:var(--dsw-alias-label-primary)}
-.leaf-code{position:relative;flex:1;min-width:0;overflow:hidden}
-.leaf-highlight{position:absolute;top:8px;left:12px;right:12px;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre;will-change:transform;color:var(--dsw-alias-label-primary)}
-.leaf-line{position:absolute;left:0;white-space:pre;height:22px}
-.leaf-textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;padding:8px 12px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre;overflow:auto;color:transparent;caret-color:var(--dsw-alias-label-primary);tab-size:2;scrollbar-width:thin}
+.leaf-line{box-sizing:border-box;padding:0 12px;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;min-height:22px}
+.leaf-textarea{box-sizing:border-box;position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;padding:8px 12px 8px 62px;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:14px;line-height:22px;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;overflow-y:auto;overflow-x:hidden;color:transparent;caret-color:var(--dsw-alias-label-primary);tab-size:2;scrollbar-width:none}
+.leaf-textarea::-webkit-scrollbar{width:0;height:0}
 .leaf-textarea.composing{color:var(--dsw-alias-label-primary)}
 .leaf-textarea::selection{background:var(--dsw-alias-bg-document-selection,#b9d7ff);color:transparent}
 .leaf-tok-cmd{color:#8a3fb0}.leaf-tok-comment{color:var(--dsw-alias-label-tertiary);font-style:italic}.leaf-tok-math{color:#1f6fb2}.leaf-tok-brace{color:var(--dsw-alias-label-secondary)}.leaf-tok-env{color:#1f7a4d}.leaf-tok-opt{color:#b06a1f}
@@ -538,13 +537,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-paper-body iframe{width:100%;height:100%;border:0;display:block;background:#fff}
 .leaf-pdf-fallback{position:absolute;inset:0;display:flex;flex-direction:column}
 .leaf-pdf-fallback iframe{flex:1;min-height:0}
-.leaf-pdf-canvas{position:absolute;inset:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:12px;background:var(--dsw-alias-bg-layer-2)}
-.leaf-pdf-page{position:relative;flex:none;margin:0 auto;background:#fff;box-shadow:0 4px 18px #0000002e}
+.leaf-pdf-canvas{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--dsw-alias-bg-layer-2)}
+.leaf-pdf-page{position:relative;margin:12px 0;background:#fff;box-shadow:0 4px 18px #0000002e}
 .leaf-pdf-page img{width:100%;height:100%;display:block;user-select:none;pointer-events:none}
 .leaf-pdf-text{position:absolute;inset:0;overflow:hidden}
 .leaf-pdf-word{position:absolute;color:transparent;white-space:pre;overflow:hidden;cursor:text;user-select:text;font-family:ui-serif,Georgia,serif}
 .leaf-pdf-word::selection{background:#4176e673}
-.leaf-pdf-loading{display:flex;align-items:center;gap:8px;margin:auto;color:var(--dsw-alias-label-tertiary);font-size:13px}
+.leaf-pdf-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px 12px;color:var(--dsw-alias-label-tertiary);font-size:13px}
 .leaf-paper-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:12px}
 .leaf-paper-empty strong{color:var(--dsw-alias-label-secondary);font-size:13px;font-weight:600}
 .leaf-resizer{width:5px;margin-left:-3px;margin-right:-2px;cursor:col-resize;z-index:3;flex:none;position:relative}
@@ -998,10 +997,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /** Virtualized textarea editor with a themed syntax layer. */
     function LatexEditor({ tab, jump, selection, workspace, onChange, onSave, onCompile, onSelectionChange, t }) {
       const textareaRef = useRef(null)
-      const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
-      const [scrollLeft, setScrollLeft] = useState(0)
-      const [viewport, setViewport] = useState(640)
       const [composition, setComposition] = useState(false)
       const scrollKey = workspace === null || workspace === undefined || tab?.path === undefined ? null : `${workspace}::${tab.path}`
       const lastKey = useRef(scrollKey)
@@ -1020,18 +1016,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         return offsets
       }, [lines])
       const lineHeight = 22
-      const overscan = 10
-
-      useEffect(() => {
-        const node = wrapRef.current
-        if (node === null) return undefined
-        const observer = new ResizeObserver((entries) => {
-          const height = entries[0]?.contentRect.height ?? 600
-          setViewport(Math.max(120, height))
-        })
-        observer.observe(node)
-        return () => observer.disconnect()
-      }, [])
 
       useEffect(() => {
         const node = textareaRef.current
@@ -1042,9 +1026,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         lastKey.current = scrollKey
         const saved = scrollKey === null ? 0 : (editorScrollMemory.get(scrollKey) ?? 0)
         node.scrollTop = saved
-        node.scrollLeft = 0
         setScrollTop(saved)
-        setScrollLeft(0)
       }, [tab?.path, workspace, scrollKey])
 
       useEffect(() => {
@@ -1141,8 +1123,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }
 
-      const start = Math.max(0, Math.floor(scrollTop / lineHeight) - overscan)
-      const end = Math.min(lines.length, start + Math.ceil(viewport / lineHeight) + overscan * 2)
       const selectedRange = selection !== null && selection !== undefined
         && typeof selection.start === 'number' && typeof selection.end === 'number'
         && selection.end > selection.start
@@ -1197,22 +1177,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
         return nodes
       }
-      const visible = []
-      for (let index = start; index < end; index += 1) {
-        const tokens = tokenizeLine(lines[index])
-        visible.push(h('div', { key: index, className: 'leaf-line', style: { top: `${index * lineHeight}px` } },
-          renderTokens(tokens, index),
-        ))
-      }
-
-      const gutter = []
-      for (let index = start; index < end; index += 1) {
-        gutter.push(h('div', {
-          key: index,
-          className: `leaf-lineno${cursor.line === index + 1 ? ' current' : ''}`,
-        }, String(index + 1)))
-      }
-
+      const rows = lines.map((line, index) => h('div', { key: index, className: 'leaf-flow-row' },
+        h('div', { className: `leaf-lineno${cursor.line === index + 1 ? ' current' : ''}` }, String(index + 1)),
+        h('div', { className: 'leaf-line' }, renderTokens(tokenizeLine(line), index)),
+      ))
       return h('div', { className: 'leaf-editor-wrap' },
         findOpen ? h('div', { className: 'leaf-find' },
           h('input', {
@@ -1232,38 +1200,34 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: () => setFindOpen(false) }, h(Icon, { name: 'close' })),
         ) : null,
         h('div', { className: 'leaf-editor' },
-          h('div', { className: 'leaf-gutter' }, h('div', { className: 'leaf-gutter-inner', style: { transform: `translateY(${-scrollTop}px)` } }, gutter)),
-          h('div', { className: 'leaf-code', ref: wrapRef },
-            h('div', {
-              className: 'leaf-highlight',
-              style: { transform: `translate(${-scrollLeft}px, ${-scrollTop}px)`, height: `${lines.length * lineHeight}px` },
-            }, visible),
-            h('textarea', {
-              ref: textareaRef,
-              className: `leaf-textarea${composition ? ' composing' : ''}`,
-              value: content,
-              spellCheck: false,
-              autoCapitalize: 'off',
-              autoCorrect: 'off',
-              wrap: 'off',
-              'aria-label': tab?.name ?? 'LaTeX source',
-              onChange: (event) => onChange(event.target.value),
-              onScroll: (event) => {
-                setScrollTop(event.target.scrollTop)
-                setScrollLeft(event.target.scrollLeft)
-                if (scrollKey !== null) editorScrollMemory.set(scrollKey, event.target.scrollTop)
-              },
-              onKeyDown,
-              onKeyUp: updateCursor,
-              onClick: updateCursor,
-              onSelect: updateCursor,
-              onCompositionStart: () => setComposition(true),
-              onCompositionEnd: (event) => {
-                setComposition(false)
-                onChange(event.target.value)
-              },
-            }),
-          ),
+          h('div', {
+            className: 'leaf-highlight',
+            style: { transform: `translateY(${-scrollTop}px)` },
+          }, rows),
+          h('textarea', {
+            ref: textareaRef,
+            className: `leaf-textarea${composition ? ' composing' : ''}`,
+            value: content,
+            spellCheck: false,
+            autoCapitalize: 'off',
+            autoCorrect: 'off',
+            wrap: 'soft',
+            'aria-label': tab?.name ?? 'LaTeX source',
+            onChange: (event) => onChange(event.target.value),
+            onScroll: (event) => {
+              setScrollTop(event.target.scrollTop)
+              if (scrollKey !== null) editorScrollMemory.set(scrollKey, event.target.scrollTop)
+            },
+            onKeyDown,
+            onKeyUp: updateCursor,
+            onClick: updateCursor,
+            onSelect: updateCursor,
+            onCompositionStart: () => setComposition(true),
+            onCompositionEnd: (event) => {
+              setComposition(false)
+              onChange(event.target.value)
+            },
+          }),
         ),
       )
     }
@@ -1406,6 +1370,18 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         node.scrollTop = pdfScrollMemory.get(cacheKey) ?? 0
       }, [data, cacheKey])
 
+      const contentBox = useMemo(() => {
+        if (!Array.isArray(data?.words) || data.words.length === 0) return null
+        let minX = Infinity
+        let maxX = -Infinity
+        for (const word of data.words) {
+          if (!(word.w > 0)) continue
+          minX = Math.min(minX, word.x)
+          maxX = Math.max(maxX, word.x + word.w)
+        }
+        return maxX > minX ? { minX, width: maxX - minX } : null
+      }, [data])
+
       if (url === null) return null
       if (fallback) {
         return h('div', { className: 'leaf-pdf-fallback' },
@@ -1422,12 +1398,19 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }
       const availableWidth = Math.max(120, box.width - 24)
       const availableHeight = Math.max(120, box.height - 24)
-      const widthScale = availableWidth / data.width
+      // "Fit width" targets the text block, not the paper edge: use the word
+      // boxes we already have for the text layer, so left/right page margins
+      // move off-screen with a single min/max pass. "Fit page" keeps the whole
+      // sheet visible.
+      const contentWidth = contentBox === null ? data.width : contentBox.width
       const scale = fit === 'page'
-        ? Math.min(widthScale, availableHeight / data.height)
-        : widthScale
+        ? Math.min(availableWidth / data.width, availableHeight / data.height)
+        : Math.min(2.2, Math.max(0.1, Math.max(120, box.width) / contentWidth))
       const width = Math.max(1, data.width * scale)
       const height = Math.max(1, data.height * scale)
+      const marginLeft = fit === 'page'
+        ? Math.max(12, (box.width - width) / 2)
+        : (box.width - contentWidth * scale) / 2 - (contentBox?.minX ?? 0) * scale
       const locate = (event) => {
         const word = event.target?.closest?.('.leaf-pdf-word')
         if (word === undefined || word === null) return
@@ -1444,7 +1427,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           if (cacheKey !== null) pdfScrollMemory.set(cacheKey, event.currentTarget.scrollTop)
         },
       },
-        h('div', { className: 'leaf-pdf-page', style: { width, height }, onDoubleClick: locate, title: t('paper.locateHint') },
+        h('div', { className: 'leaf-pdf-page', style: { width, height, marginLeft }, onDoubleClick: locate, title: t('paper.locateHint') },
           h('img', {
             src: pdfPageUrl(workspace, pageNumber, version),
             alt: '',
