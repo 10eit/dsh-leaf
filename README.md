@@ -20,7 +20,7 @@
 | 资源预览 | PNG/JPG/GIF/WebP/SVG/PDF 应用内预览；显示相对路径、大小、更新时间；复制相对路径、复制 `\includegraphics` 片段、在访达中显示 |
 | 环境 | 在后台检测发行版、pdflatex/xelatex/latexmk/bibtex/biber/synctex；用最小示例做真实编译验证；检测/验证失败给出非阻塞说明，不自动下载 |
 | 模板 | 最小中文项目（ctex + XeLaTeX）与最小英文项目（pdfLaTeX）；只新增缺失文件，不覆盖用户内容 |
-| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics）与 `latex_build` 两个原生工具，返回与 UI 相同的结构化构建结果 |
+| Agent 集成 | 原生模型选择与普通对话不变；新增 `latex_project`（status/init/create_file/set_main/clean/diagnostics）与 `latex_build` 两个原生工具，返回与 UI 相同的结构化构建结果；编辑器可把当前文件/选区连同文件名与行号直接带到原生写作会话的输入框 |
 | 定位 | 源码 → PDF 的 SyncTeX 正向定位（编辑器按钮）；PDF → 源码的反向查询 API 已提供（见 §6） |
 
 ## 2. 安装
@@ -134,7 +134,7 @@ open examples/paper/main.tex      # 也可以只在面板中浏览
 
 ### 关于 Writing Agent
 
-dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模型列表、权限与工具体系保持原生。写作视图通过 `latex_build`/`latex_project` 原生工具、`systemPrompt` 段落与「复制引用」把项目上下文交给同一个 Agent；差异审阅式写入尚未实现，Agent 的文件修改仍走宿主原生文件工具与权限提示。
+dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模型列表、权限与工具体系保持原生。写作视图通过 `latex_build`/`latex_project` 原生工具、`systemPrompt` 段落、「复制引用」与「交给 Writing Agent」（把文件、行号和选区预填到原生会话输入框）把项目上下文交给同一个 Agent；差异审阅式写入尚未实现，Agent 的文件修改仍走宿主原生文件工具与权限提示。
 
 ## 7. 性能措施
 
@@ -147,7 +147,7 @@ dsh-leaf 不创建第二套 Agent runtime 或模型选择：普通对话、模�
 ## 8. 开发与测试
 
 ```sh
-npm test          # 17 个测试：单元、日志解析、真实编译、HTTP/Range/认证围栏
+npm test          # 18 个测试：单元、日志解析、真实编译、HTTP/Range/认证围栏
 npm run check     # 所有 JS 文件语法检查
 ```
 

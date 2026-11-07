@@ -64,6 +64,7 @@ window.__ModuleLoader__.load({
       'tree.error': '读取失败',
       'tree.reveal': '在访达中显示',
       'tree.copyPath': '复制相对路径',
+      'main.ambiguous': '检测到多个主文档候选，请在“主文档”中选择编译入口。',
       'editor.empty': '从左侧选择文件开始编辑',
       'editor.emptyHint': '也可以新建章节或从模板创建项目。',
       'editor.unsaved': '未保存',
@@ -82,6 +83,11 @@ window.__ModuleLoader__.load({
       'editor.column': '列',
       'editor.locatePdf': '定位到 PDF',
       'editor.copyRef': '复制引用',
+      'editor.toAgent': '交给 Writing Agent',
+      'editor.agentPromptTitle': '请作为 Writing Agent 帮我修改这段 LaTeX。',
+      'editor.agentPromptFile': '文件：{path}（第 {from} 行到第 {to} 行）',
+      'editor.agentPromptSelection': '选中的源码如下：',
+      'editor.agentPromptAsk': '要求：',
       'editor.copied': '已复制引用，可粘贴到对话中。',
       'editor.locateFailed': '定位失败：请重新完整编译后再试。',
       'paper.title': '论文 PDF',
@@ -221,6 +227,7 @@ window.__ModuleLoader__.load({
       'tree.error': 'Failed to load',
       'tree.reveal': 'Reveal in Finder',
       'tree.copyPath': 'Copy relative path',
+      'main.ambiguous': 'Several documents could be the main file. Choose the build entry under “Main document”.',
       'editor.empty': 'Choose a file on the left to start editing',
       'editor.emptyHint': 'Or create a section and start from a template.',
       'editor.unsaved': 'Unsaved',
@@ -239,6 +246,11 @@ window.__ModuleLoader__.load({
       'editor.column': 'Col',
       'editor.locatePdf': 'Locate in PDF',
       'editor.copyRef': 'Copy reference',
+      'editor.toAgent': 'Send to Writing Agent',
+      'editor.agentPromptTitle': 'Act as my Writing Agent and revise this LaTeX.',
+      'editor.agentPromptFile': 'File: {path} (lines {from}-{to})',
+      'editor.agentPromptSelection': 'Selected source:',
+      'editor.agentPromptAsk': 'Request:',
       'editor.copied': 'Reference copied; paste it into the conversation.',
       'editor.locateFailed': 'Locate failed: run a full build and try again.',
       'paper.title': 'Paper PDF',
@@ -832,7 +844,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     /** Virtualized textarea editor with a themed syntax layer. */
-    function LatexEditor({ tab, jump, onChange, onSave, onCompile, onCursor, onReference, t }) {
+    function LatexEditor({ tab, jump, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, t }) {
       const textareaRef = useRef(null)
       const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
@@ -1040,6 +1052,20 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               onReference?.({ path: tab.path, fromLine, toLine, text: selected })
             },
           }, h(Icon, { name: 'copy' }), t('editor.copyRef')),
+          h('button', {
+            type: 'button',
+            className: 'leaf-btn small ghost',
+            title: t('editor.toAgent'),
+            onClick: () => {
+              const node = textareaRef.current
+              if (node === null || tab === undefined) return
+              const selected = node.value.slice(node.selectionStart, node.selectionEnd)
+              const before = node.value.slice(0, node.selectionStart)
+              const fromLine = before.split('\n').length
+              const toLine = fromLine + (selected.split('\n').length - 1)
+              onSendToAgent?.({ path: tab.path, fromLine, toLine, text: selected })
+            },
+          }, h(LeafMark, { size: 12 }), t('editor.toAgent')),
           h('button', {
             type: 'button',
             className: 'leaf-btn small ghost',
@@ -1268,6 +1294,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const { useLeaf, t, openPanel } = props
       const openRequest = useLeaf((snapshot) => snapshot)
       const workspaces = props.useWorkspaces((snapshot) => snapshot.items)
+      const activeSessionCwd = props.useSessions((snapshot) => {
+        const session = Object.values(snapshot.byId ?? {}).find((item) => (item.retainedBy?.mainView ?? 0) > 0)
+        return session?.cwd ?? null
+      })
       const [activePath, setActivePath] = useState(() => readStored(STORAGE.workspace, ''))
       const [state, setState] = useState(null)
       const [loading, setLoading] = useState(false)
@@ -1298,6 +1328,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const alive = useRef(true)
       const viewRef = useRef({ tabs, activeTabPath, expanded, preview, pdfPage })
       const tabsRef = useRef(tabs)
+      const expandedRef = useRef(expanded)
       const stateRef = useRef(state)
       const buildingRef = useRef(false)
       const treeInFlight = useRef(new Set())
@@ -1308,6 +1339,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       tabsRef.current = tabs
       stateRef.current = state
       dirsRef.current = dirs
+      expandedRef.current = expanded
       viewRef.current = { tabs, activeTabPath, expanded, preview, pdfPage }
       useEffect(() => () => { alive.current = false }, [])
 
@@ -1325,6 +1357,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const valid = workspaceItems.some((item) => item.path === activePath)
         if (!valid) setActivePath(workspaceItems[0].path)
       }, [workspaceItems.map((item) => item.path).join('|')])
+
+      // Follow the workspace of the session the user switched to in the sidebar.
+      // A workspace picked inside the panel stays until that session changes.
+      useEffect(() => {
+        if (activeSessionCwd === null || activeSessionCwd === undefined) return
+        const match = workspaceItems.find((item) => activeSessionCwd === item.path
+          || activeSessionCwd.startsWith(`${item.path}/`))
+        if (match !== undefined && match.path !== activePath) setActivePath(match.path)
+      }, [activeSessionCwd])
 
       useEffect(() => {
         if (activePath !== '') writeStored(STORAGE.workspace, activePath)
@@ -1407,6 +1448,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         loadDir('').finally(() => {
           if (alive.current) setTreeLoading(false)
         })
+        for (const dir of expandedRef.current) loadDir(dir)
       }, [workspacePath, showAux, showHidden, loadDir])
 
       // Poll only the directories that are currently visible/expanded. This keeps
@@ -1653,6 +1695,18 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [workspacePath])
 
+      const sendToAgent = useCallback((payload) => {
+        if (activeWorkspace === null || activeWorkspace === undefined) return
+        const header = activeWorkspace.title || basename(activeWorkspace.path)
+        const lines = [t('editor.agentPromptTitle'), '']
+        lines.push(t('editor.agentPromptFile', { path: payload.path, from: payload.fromLine, to: payload.toLine }))
+        if (payload.text !== undefined && payload.text.trim() !== '') {
+          lines.push(t('editor.agentPromptSelection'), '```latex', payload.text, '```')
+        }
+        lines.push('', t('editor.agentPromptAsk'))
+        props.startWritingAgent?.(activeWorkspace.workspaceId, `${header}\n\n${lines.join('\n')}`)
+      }, [activeWorkspace, t])
+
       const createFile = useCallback(async (input) => {
         if (workspacePath === null) return
         try {
@@ -1833,6 +1887,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('toolbar.clean'), onClick: () => compile({ clean: true }) }, h(Icon, { name: 'trash' })),
         ),
         dirtyCount > 0 ? h('div', { className: 'leaf-banner' }, h('span', null, `${dirtyCount} ${t('editor.unsaved')}`), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => saveTab(activeTabPath) }, t('editor.save'))) : null,
+        state?.ambiguousMain === true ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('main.ambiguous'))) : null,
         loadError !== null ? h('div', { className: 'leaf-banner bad' }, h(Icon, { name: 'warning' }), h('span', null, loadError), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => refreshState() }, t('common.retry'))) : null,
 
         h('div', { className: 'leaf-body' },
@@ -1934,6 +1989,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       onSave: () => saveTab(activeTab.path),
                       onCompile: () => compile(),
                       onReference: copyReference,
+                      onSendToAgent: sendToAgent,
                       onCursor: (payload) => {
                         if (payload?.locate === true) locateInPdf(payload)
                       },
@@ -2196,6 +2252,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         inject: () => ({
           hooks: { leaf: store.source },
           openPanel: openLeaf,
+          startWritingAgent: (workspaceId, prompt) => ctx.uiWorkspace.startSession(workspaceId, {
+            prompt,
+            whenDraftExists: 'append',
+          }),
         }),
       }, LeafPanel))
 
@@ -2262,7 +2322,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     return {
-      inject: ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts'],
+      inject: ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts', 'uiWorkspace'],
       apply,
     }
   },
