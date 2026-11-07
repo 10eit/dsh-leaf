@@ -1182,36 +1182,61 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /* Paper pane                                                          */
     /* ------------------------------------------------------------------ */
 
-    function PaperPane({ url, stale, draft, page, fit, onPage, onFit, onReload, onExport, t, style, onResizeStart }) {
+    function PaperPane({ url, stale, draft, page, fit, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent }) {
       const hash = `#page=${page}&zoom=${fit === 'page' ? 'page-fit' : 'page-width'}&toolbar=1&navpanes=0`
+      const problems = (receipt?.errors?.length ?? 0) + (receipt?.warnings?.length ?? 0) + (receipt?.missing?.length ?? 0)
       return h('div', { className: 'leaf-paper', style },
-        h('div', { className: 'leaf-pane-head' }, h(Icon, { name: 'file', size: 13 }), h('span', null, t('paper.title')), h('span', { className: 'leaf-spacer' }),
-          h('span', { className: 'leaf-muted', style: { fontWeight: 400 } }, page)),
-        h('div', { className: 'leaf-paper-tools' },
-          h('span', null, t('paper.page')),
-          h('input', {
-            className: 'leaf-input',
-            style: { width: 46, height: 22, padding: '0 5px' },
-            value: page,
-            inputMode: 'numeric',
-            onChange: (event) => onPage(event.target.value.replace(/[^0-9]/g, '')),
-          }),
-          h('select', { className: 'leaf-select', style: { height: 22, fontSize: 11 }, value: fit, onChange: (event) => onFit(event.target.value) },
-            h('option', { value: 'width' }, t('paper.fitWidth')),
-            h('option', { value: 'page' }, t('paper.fitPage')),
-          ),
-          h('span', { className: 'leaf-spacer' }),
-          url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh' })),
-          url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download' })),
-          url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external' })),
+        h('div', { className: 'leaf-tabs' },
+          h('div', {
+            className: `leaf-tab${tab === 'pdf' ? ' active' : ''}`,
+            onClick: () => onTab('pdf'),
+            title: t('paper.title'),
+          }, h(Icon, { name: 'file' }), h('span', { className: 'leaf-name' }, t('paper.title'))),
+          h('div', {
+            className: `leaf-tab${tab === 'log' ? ' active' : ''}`,
+            onClick: () => onTab('log'),
+            title: t('log.title'),
+          }, h(Icon, { name: 'warning' }), h('span', { className: 'leaf-name' }, t('log.title')),
+            problems > 0 ? h('span', { className: 'leaf-ext', style: { width: 'auto', padding: '0 5px' } }, String(problems)) : null),
         ),
-        stale ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.stale'))) : null,
-        draft === true && stale === false ? h('div', { className: 'leaf-banner' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.draft'))) : null,
-        h('div', { className: 'leaf-paper-body' },
-          url === null
-            ? h('div', { className: 'leaf-paper-empty' }, h(LeafMark, { size: 30 }), h('strong', null, t('paper.empty')), h('span', null, t('paper.emptyHint')))
-            : h('iframe', { title: t('paper.title'), src: `${url}${hash}`, key: `${url}${hash}` }),
-        ),
+        tab === 'log'
+          ? h(LogPane, {
+              open: true,
+              embedded: true,
+              receipt,
+              onOpenProblem,
+              onFullLog,
+              onFixWithAgent,
+              t,
+              height: '100%',
+            })
+          : h(React.Fragment, null,
+              h('div', { className: 'leaf-paper-tools' },
+                h('span', null, t('paper.page')),
+                h('input', {
+                  className: 'leaf-input',
+                  style: { width: 46, height: 22, padding: '0 5px' },
+                  value: page,
+                  inputMode: 'numeric',
+                  onChange: (event) => onPage(event.target.value.replace(/[^0-9]/g, '')),
+                }),
+                h('select', { className: 'leaf-select', style: { height: 22, fontSize: 11 }, value: fit, onChange: (event) => onFit(event.target.value) },
+                  h('option', { value: 'width' }, t('paper.fitWidth')),
+                  h('option', { value: 'page' }, t('paper.fitPage')),
+                ),
+                h('span', { className: 'leaf-spacer' }),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh' })),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download' })),
+                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external' })),
+              ),
+              stale ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.stale'))) : null,
+              draft === true && stale === false ? h('div', { className: 'leaf-banner' }, h(Icon, { name: 'warning' }), h('span', null, t('paper.draft'))) : null,
+              h('div', { className: 'leaf-paper-body' },
+                url === null
+                  ? h('div', { className: 'leaf-paper-empty' }, h(LeafMark, { size: 30 }), h('strong', null, t('paper.empty')), h('span', null, t('paper.emptyHint')))
+                  : h('iframe', { title: t('paper.title'), src: `${url}${hash}`, key: `${url}${hash}` }),
+              ),
+            ),
       )
     }
 
@@ -1271,7 +1296,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /* Build log                                                          */
     /* ------------------------------------------------------------------ */
 
-    function LogPane({ open, receipt, onToggle, onOpenProblem, onFullLog, onFixWithAgent, t, height }) {
+    function LogPane({ open, embedded = false, receipt, onToggle, onOpenProblem, onFullLog, onFixWithAgent, t, height }) {
       const [tab, setTab] = useState('problems')
       const errors = receipt?.errors ?? []
       const warnings = receipt?.warnings ?? []
@@ -1280,10 +1305,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         ...errors.map((error, index) => ({ ...error, key: `e${index}`, severity: 'error' })),
         ...warnings.map((warning, index) => ({ key: `w${index}`, severity: 'warning', message: warning, file: null, line: null })),
       ]
-      return h('div', { className: 'leaf-log', style: open ? { height } : { height: 30 } },
+      return h('div', { className: 'leaf-log', style: embedded ? { height: '100%', borderTop: 0 } : open ? { height } : { height: 30 } },
         h('div', { className: 'leaf-log-head' },
-          h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onToggle, title: open ? t('log.hide') : t('log.show') }, h(Chevron, { open })),
-          h('span', null, t('log.title')),
+          embedded ? null : h('button', { type: 'button', className: 'leaf-btn small ghost', onClick: onToggle, title: open ? t('log.hide') : t('log.show') }, h(Chevron, { open })),
+          embedded ? null : h('span', null, t('log.title')),
           receipt === null ? null : h('span', { className: 'leaf-muted' }, `· ${receipt.status} · ${((receipt.durationMs ?? 0) / 1000).toFixed(1)}${t('common.seconds')}`),
           h('span', { className: 'leaf-spacer' }),
           open ? h('button', { type: 'button', className: `leaf-btn small ${tab === 'problems' ? '' : 'ghost'}`, onClick: () => setTab('problems') }, `${t('log.problems')} ${problems.length}`) : null,
@@ -1345,8 +1370,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [preview, setPreview] = useState(null)
       const [build, setBuild] = useState({ status: 'idle', receipt: null })
       const [savedAt, setSavedAt] = useState(0)
-      const [logOpenRaw, setLogOpenRaw] = usePersisted(STORAGE.logOpen, true)
-      const logOpen = boolStored(logOpenRaw, true)
+      const [rightTab, setRightTab] = useState('pdf')
       const [modal, setModal] = useState(null)
       const [pdfPage, setPdfPage] = useState('1')
       const [pdfFit, setPdfFit] = useState('width')
@@ -1687,6 +1711,11 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           })
           if (!alive.current) return
           setBuild({ status: receipt.status, receipt })
+          if (receipt.errors?.length > 0 || receipt.missing?.length > 0 || receipt.status === 'failed' || receipt.status === 'timeout') {
+            setRightTab('log')
+          } else {
+            setRightTab('pdf')
+          }
           if (receipt.state !== undefined) setState(receipt.state)
           setPdfPage('1')
           setPdfReloadKey(Date.now())
@@ -2105,16 +2134,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       },
                     }),
                   ),
-            h(LogPane, {
-              open: logOpen,
-              receipt,
-              onToggle: () => setLogOpenRaw((value) => !boolStored(value, true)),
-              onOpenProblem: openProblem,
-              onFullLog: () => window.open(new URL(`dsh-leaf/log?${workspaceQuery(workspacePath)}`, document.baseURI).href, '_blank'),
-              onFixWithAgent: fixWithAgent,
-              t,
-              height: 190,
-            }),
           ),
           h('div', { className: 'leaf-resizer', onPointerDown: onPaperResize, 'aria-hidden': true }),
           h(PaperPane, {
@@ -2129,7 +2148,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             onExport: exportPdf,
             t,
             style: paperWidth > 0 ? { width: paperWidth } : {},
-            onResizeStart: onPaperResize,
+            tab: rightTab,
+            onTab: setRightTab,
+            receipt,
+            onOpenProblem: openProblem,
+            onFullLog: () => window.open(new URL(`dsh-leaf/log?${workspaceQuery(workspacePath)}`, document.baseURI).href, '_blank'),
+            onFixWithAgent: fixWithAgent,
           }),
         ),
         toast === null ? null : h('div', { className: 'leaf-toast' }, toast),

@@ -116,7 +116,7 @@ test('client bundle registers the writing panel and renders', { skip: renderer =
   assert.match(panel, /leaf-toolbar/)
   assert.match(panel, /leaf-tree/)
   assert.match(panel, /leaf-paper/)
-  assert.match(panel, /leaf-log/)
+  assert.match(panel, /log\.title/)
 
   delete globalThis.window
   delete globalThis.document
