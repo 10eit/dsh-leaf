@@ -102,6 +102,24 @@ test('health, state, tree, and editor routes round-trip', async () => {
   }
 })
 
+test('client activation diagnostics are appended to the host log', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-diag-'))
+  const server = await harness(dir)
+  try {
+    const response = await fetch(`${server.base}/dsh-leaf/client-error`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stage: 'test-stage', message: 'boom', stack: 'at test' }),
+    })
+    assert.equal(response.status, 200)
+    const log = await readFile(path.join(tmpdir(), 'dsh-leaf-client-errors.log'), 'utf8')
+    assert.ok(log.includes('"stage":"test-stage"'))
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('the trust fence rejects unauthenticated requests before any file access', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-fence-'))
   const server = await harness(dir, { rejection: 401 })

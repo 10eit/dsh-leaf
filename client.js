@@ -2343,7 +2343,65 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return h('span', { style: { display: 'inline-flex', color: 'var(--dsw-alias-label-primary)' } }, h(LeafMark, { size: 16 }))
     }
 
+    /**
+     * Report a client activation failure to the Host's diagnostic log. The
+     * browser console is not always captured by the desktop crash report, so a
+     * failed slot/menu registration must leave a readable trace.
+     * @param {string} stage - activation step that failed.
+     * @param {unknown} error - thrown value.
+     */
+    function reportClientError(stage, error) {
+      try {
+        const body = JSON.stringify({
+          stage,
+          message: String(error?.message ?? error),
+          stack: String(error?.stack ?? ''),
+          href: String(location.href),
+          ua: String(navigator.userAgent),
+        })
+        fetch(new URL('dsh-leaf/client-error', document.baseURI), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body,
+          keepalive: true,
+        }).catch(() => {})
+      } catch {
+        // diagnostics must never mask the original failure
+      }
+    }
+
+    /**
+     * Run one activation step, reporting and rethrowing on failure.
+     * @template T
+     * @param {string} stage - step name.
+     * @param {() => T} action - activation work.
+     * @returns {T} action result.
+     */
+    function guarded(stage, action) {
+      try {
+        return action()
+      } catch (error) {
+        // One broken contribution must not take the whole web shell down; the
+        // failure is reported to the Host log and the console, and the rest of
+        // the plugin keeps activating.
+        reportClientError(stage, error)
+        console.error(`[dsh-leaf] ${stage} failed`, error)
+        return undefined
+      }
+    }
+
     function apply(ctx) {
+      try {
+        applyLeaf(ctx)
+      } catch (error) {
+        reportClientError('apply', error)
+        console.error('[dsh-leaf] apply failed', error)
+        return
+      }
+      reportClientError('activated', null)
+    }
+
+    function applyLeaf(ctx) {
       const store = createLeafStore()
       const t = ctx.locale.bind(NS)
       const openLeaf = (path, file = null) => {
@@ -2355,10 +2413,10 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }
 
-      ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-leaf: dictionaries')
-      ctx.effect(() => installStyles(), 'dsh-leaf: styles')
+      guarded('locale', () => ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-leaf: dictionaries'))
+      guarded('styles', () => ctx.effect(() => installStyles(), 'dsh-leaf: styles'))
 
-      ctx.slots.inject('main', () => ctx.slots.register({
+      guarded('main-inject', () => ctx.slots.inject('main', () => guarded('main-register', () => ctx.slots.register({
         name: 'main',
         key: PANEL_ID,
         locale: NS,
@@ -2370,22 +2428,22 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             whenDraftExists: 'append',
           }),
         }),
-      }, LeafPanel))
+      }, LeafPanel))))
 
-      ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+      guarded('sidebar-inject', () => ctx.slots.inject('sidebar.panellist', () => guarded('sidebar-register', () => ctx.slots.register({
         name: 'sidebar.panellist',
         id: PANEL_ID,
         order: 2,
         label: () => t('panel'),
         locale: NS,
-      }, SidebarLeafIcon))
+      }, SidebarLeafIcon))))
 
-      ctx.slots.inject('contextMenu.icon', () => ctx.slots.register({
+      guarded('menu-icon', () => ctx.slots.inject('contextMenu.icon', () => guarded('menu-icon-register', () => ctx.slots.register({
         name: 'contextMenu.icon',
         key: MENU_OPEN,
-      }, MenuLeafIcon))
+      }, MenuLeafIcon))))
 
-      ctx.effect(() => ctx.contextMenus.register({
+      guarded('menu-open', () => ctx.effect(() => ctx.contextMenus.register({
         id: MENU_OPEN,
         target: 'workspace',
         order: 150,
@@ -2395,9 +2453,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           icon: { key: MENU_OPEN },
           run: () => openLeaf(target.path),
         }],
-      }), 'dsh-leaf: workspace menu action')
+      })), 'dsh-leaf: workspace menu action')
 
-      ctx.effect(() => ctx.contextMenus.register({
+      guarded('menu-close', () => ctx.effect(() => ctx.contextMenus.register({
         id: MENU_CLOSE,
         target: 'workspace',
         order: 160,
@@ -2413,7 +2471,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             }
           },
         }],
-      }), 'dsh-leaf: workspace close action')
+      })), 'dsh-leaf: workspace close action')
 
       const workspaceOfSession = (sessionId) => {
         const session = ctx.sessions?.list?.getSnapshot?.()?.byId?.[sessionId]
@@ -2430,7 +2488,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         return file.startsWith(`${workspacePath}/`) ? file.slice(workspacePath.length + 1) : file
       }
 
-      ctx.effect(() => ctx.contextMenus.register({
+      guarded('menu-file-open', () => ctx.effect(() => ctx.contextMenus.register({
         id: 'dsh-leaf.file-open',
         target: 'file',
         order: 180,
@@ -2444,9 +2502,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             run: () => openLeaf(workspace.path, relativeToWorkspace(workspace.path, target.path)),
           }]
         },
-      }), 'dsh-leaf: file open action')
+      })), 'dsh-leaf: file open action')
 
-      ctx.effect(() => ctx.contextMenus.register({
+      guarded('menu-file-latex', () => ctx.effect(() => ctx.contextMenus.register({
         id: 'dsh-leaf.file-latex',
         target: 'file',
         order: 190,
@@ -2487,9 +2545,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             },
           ]
         },
-      }), 'dsh-leaf: file latex actions')
+      })), 'dsh-leaf: file latex actions')
 
-      ctx.effect(() => ctx.shortcuts.register({
+      guarded('shortcut', () => ctx.effect(() => ctx.shortcuts.register({
         id: 'dsh-leaf.open',
         label: () => t('panel.open'),
         aliases: ['leaf', 'latex'],
@@ -2506,7 +2564,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         resolve: ({ modal }) => (modal !== null && modal !== 'sidebar'
           ? { status: 'pass' }
           : { status: 'handled', run: () => openLeaf() }),
-      }), 'dsh-leaf: open shortcut')
+      })), 'dsh-leaf: open shortcut')
     }
 
     return {
