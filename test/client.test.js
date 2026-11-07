@@ -114,7 +114,7 @@ test('client bundle registers the writing panel and renders', { skip: renderer =
     useSessions: (selector) => selector({ byId: {} }),
   }))
   assert.match(panel, /leaf-toolbar/)
-  assert.match(panel, /leaf-tree/)
+  assert.match(panel, /leaf-agent-dock/)
   assert.match(panel, /leaf-paper/)
   assert.match(panel, /log\.title/)
 
