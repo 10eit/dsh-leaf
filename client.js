@@ -420,7 +420,7 @@ window.__ModuleLoader__.load({
 .leaf-ext{width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex:none;letter-spacing:-.2px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace}
 .leaf-ext.tex{background:#e7f2ea;color:#1f7a4d}.leaf-ext.bib{background:#f3eee2;color:#8a6a1f}.leaf-ext.img{background:#e9eefb;color:#3a5fb0}.leaf-ext.pdf{background:#fbe9e7;color:#b0453a}.leaf-ext.code{background:#eef0f4;color:#5a6472}
 .leaf-tree-hint{padding:10px;color:var(--dsw-alias-label-tertiary);font-size:12px}
-.leaf-editor-col{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;background:var(--dsw-alias-bg-base)}
+.leaf-editor-col{display:flex;flex-direction:column;flex:1;min-width:280px;min-height:0;background:var(--dsw-alias-bg-base)}
 .leaf-tabs{display:flex;align-items:stretch;height:34px;border-bottom:1px solid var(--dsw-alias-border-l1);overflow-x:auto;flex:none;background:var(--dsw-alias-bg-base);scrollbar-width:thin}
 .leaf-tab{display:flex;align-items:center;gap:6px;padding:0 8px 0 12px;max-width:220px;border-right:1px solid var(--dsw-alias-border-l1);font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;position:relative;flex:none}
 .leaf-tab.active{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1)}
@@ -452,7 +452,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-banner .leaf-spacer{flex:1}
 .leaf-banner.warn{background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 80%,#d99a2b 20%)}
 .leaf-banner.bad{background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 80%,#d9534f 20%)}
-.leaf-paper{display:flex;flex-direction:column;min-width:260px;max-width:70%;border-left:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none}
+.leaf-paper{display:flex;flex-direction:column;min-width:240px;max-width:70%;border-left:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:0 1 auto}
 .leaf-paper-tools{display:flex;align-items:center;gap:4px;padding:4px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base);flex:none;font-size:11px;color:var(--dsw-alias-label-secondary)}
 .leaf-paper-body{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-layer-2)}
 .leaf-paper-body iframe{width:100%;height:100%;border:0;display:block;background:#fff}
@@ -513,7 +513,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-muted{color:var(--dsw-alias-label-tertiary)}
 .leaf-nowrap{white-space:nowrap}
 .leaf-hide{display:none!important}
-@media (max-width:900px){.leaf-paper{min-width:220px}.leaf-tree{min-width:150px}}
+@media (max-width:900px){.leaf-paper{min-width:200px;max-width:58%}.leaf-tree{min-width:150px}.leaf-editor-col{min-width:220px}}
 `
 
     /* ------------------------------------------------------------------ */
@@ -865,6 +865,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       const [scrollLeft, setScrollLeft] = useState(0)
       const [viewport, setViewport] = useState(640)
       const [composition, setComposition] = useState(false)
+      const scrollMemory = useRef(new Map())
+      const lastPath = useRef(tab?.path)
       const [findOpen, setFindOpen] = useState(false)
       const [findText, setFindText] = useState('')
       const [cursor, setCursor] = useState({ line: 1, column: 1 })
@@ -887,8 +889,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       useEffect(() => {
         const node = textareaRef.current
         if (node === null) return
-        if (Math.abs(node.scrollTop - scrollTop) > 1) node.scrollTop = scrollTop
-        if (Math.abs(node.scrollLeft - scrollLeft) > 1) node.scrollLeft = scrollLeft
+        if (lastPath.current !== undefined && lastPath.current !== tab?.path) {
+          scrollMemory.current.set(lastPath.current, scrollTop)
+        }
+        lastPath.current = tab?.path
+        const saved = tab?.path === undefined ? 0 : (scrollMemory.current.get(tab.path) ?? 0)
+        node.scrollTop = saved
+        node.scrollLeft = 0
+        setScrollTop(saved)
+        setScrollLeft(0)
       }, [tab?.path])
 
       useEffect(() => {
@@ -1035,6 +1044,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               onScroll: (event) => {
                 setScrollTop(event.target.scrollTop)
                 setScrollLeft(event.target.scrollLeft)
+                if (tab?.path !== undefined) scrollMemory.current.set(tab.path, event.target.scrollTop)
               },
               onKeyDown,
               onKeyUp: updateCursor,
@@ -1101,10 +1111,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         style: { paddingLeft: `${6 + depth * 13}px` },
         title: entry.path,
         onClick: () => (isDir ? onToggle(entry.path) : onOpen(entry)),
-        onContextMenu: (event) => {
-          event.preventDefault()
-          onReveal?.(entry)
-        },
       },
         isDir ? h(Chevron, { open: expanded.has(entry.path) }) : h('span', { style: { width: 14, flex: 'none' } }),
         isDir ? h(Icon, { name: 'folder' }) : h(TypeBadge, { name: entry.name }),
