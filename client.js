@@ -2468,6 +2468,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           'desktop:linux': { code: 'KeyL', modifiers: ['primary', 'shift'] },
           'web:macos': { code: 'KeyL', modifiers: ['primary', 'shift'] },
           'web:windows': { code: 'KeyL', modifiers: ['primary', 'shift'] },
+          'web:linux': { code: 'KeyL', modifiers: ['primary', 'shift'] },
         },
         regions: ['page', 'editable'],
         modals: ['sidebar'],
