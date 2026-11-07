@@ -38,6 +38,9 @@ window.__ModuleLoader__.load({
       'menu.open': '在 dsh-leaf 中打开',
       'menu.close': '关闭 dsh-leaf',
       'menu.disabled': '已关闭此工作区的 dsh-leaf；项目文件与会话保持不变。',
+      'menu.copySnippet': '复制 LaTeX 插入片段',
+      'menu.copySnippetDone': '已复制 LaTeX 插入片段，可粘贴到章节文件中。',
+      'menu.copyPathDone': '已复制相对路径。',
       'toolbar.workspace': '工作区',
       'toolbar.main': '主文档',
       'toolbar.engine': '引擎',
@@ -205,6 +208,9 @@ window.__ModuleLoader__.load({
       'menu.open': 'Open in dsh-leaf',
       'menu.close': 'Close dsh-leaf',
       'menu.disabled': 'dsh-leaf is off for this workspace. Project files and sessions are unchanged.',
+      'menu.copySnippet': 'Copy LaTeX include snippet',
+      'menu.copySnippetDone': 'The LaTeX include snippet is copied.',
+      'menu.copyPathDone': 'Relative path copied.',
       'toolbar.workspace': 'Workspace',
       'toolbar.main': 'Main document',
       'toolbar.engine': 'Engine',
@@ -567,7 +573,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 
     /** Small observable store shared by the sidebar/context-menu entries and the panel. */
     function createLeafStore() {
-      let snapshot = { path: null, at: 0 }
+      let snapshot = { path: null, file: null, at: 0 }
       const listeners = new Set()
       const source = {
         getSnapshot: () => snapshot,
@@ -578,8 +584,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }
       return {
         source,
-        open(path) {
-          snapshot = { path: path ?? snapshot.path, at: Date.now() }
+        open(path, file = null) {
+          snapshot = { path: path ?? snapshot.path, file, at: Date.now() }
           for (const listener of [...listeners]) listener()
         },
       }
@@ -1552,6 +1558,15 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [workspacePath])
 
+      // A file action from the host's right-sidebar tree opens the workspace and
+      // then the requested file in this panel.
+      useEffect(() => {
+        if (workspacePath === null || openRequest?.file === null || openRequest?.file === undefined) return
+        if (openRequest.path !== null && openRequest.path !== undefined && openRequest.path !== workspacePath) return
+        const file = openRequest.file
+        openFile({ path: file, name: basename(file), extension: extOf(file), mtime: 0, size: 0 })
+      }, [workspacePath, openRequest?.at])
+
       const updateTab = useCallback((path, content) => {
         setTabs((previous) => previous.map((tab) => (tab.path === path ? { ...tab, content } : tab)))
       }, [])
@@ -2281,8 +2296,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     function apply(ctx) {
       const store = createLeafStore()
       const t = ctx.locale.bind(NS)
-      const openLeaf = (path) => {
-        if (path !== undefined) store.open(path)
+      const openLeaf = (path, file = null) => {
+        if (path !== undefined) store.open(path, file)
         try {
           ctx.layout.selectPanel(PANEL_ID)
         } catch {
@@ -2350,6 +2365,80 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }],
       }), 'dsh-leaf: workspace close action')
 
+      const workspaceOfSession = (sessionId) => {
+        const session = ctx.sessions?.list?.getSnapshot?.()?.byId?.[sessionId]
+        const cwd = session?.cwd
+        if (typeof cwd !== 'string' || cwd === '') return null
+        const items = ctx.workspaces?.list?.getSnapshot?.()?.items ?? []
+        return items.find((item) => cwd === item.path || cwd.startsWith(`${item.path}/`)) ?? null
+      }
+
+      const relativeToWorkspace = (workspacePath, file) => {
+        if (typeof file !== 'string') return file
+        if (!file.startsWith('/')) return file
+        if (file === workspacePath) return ''
+        return file.startsWith(`${workspacePath}/`) ? file.slice(workspacePath.length + 1) : file
+      }
+
+      ctx.effect(() => ctx.contextMenus.register({
+        id: 'dsh-leaf.file-open',
+        target: 'file',
+        order: 180,
+        resolve: (target) => {
+          const workspace = workspaceOfSession(target.sessionId)
+          if (workspace === null) return []
+          return [{
+            id: 'open',
+            label: t('menu.open'),
+            icon: { key: MENU_OPEN },
+            run: () => openLeaf(workspace.path, relativeToWorkspace(workspace.path, target.path)),
+          }]
+        },
+      }), 'dsh-leaf: file open action')
+
+      ctx.effect(() => ctx.contextMenus.register({
+        id: 'dsh-leaf.file-latex',
+        target: 'file',
+        order: 190,
+        resolve: (target) => {
+          const workspace = workspaceOfSession(target.sessionId)
+          const file = workspace === null ? target.path : relativeToWorkspace(workspace.path, target.path)
+          const extension = extOf(file)
+          const isTex = ['tex', 'ltx'].includes(extension)
+          const isFigure = IMAGE_EXT.has(extension) || extension === 'pdf'
+          if (!isTex && !isFigure) return []
+          const snippet = isFigure
+            ? `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{${file}}\n  \\caption{}\n  \\label{fig:${basename(file).replace(/\.[^.]+$/, '')}}\n\\end{figure}`
+            : `\\input{${file.replace(/\.tex$/, '')}}`
+          return [
+            {
+              id: 'copy-snippet',
+              label: t('menu.copySnippet'),
+              run: async () => {
+                try {
+                  await navigator.clipboard.writeText(snippet)
+                  ctx.contextMenus.notify(t('menu.copySnippetDone'), true)
+                } catch (error) {
+                  ctx.contextMenus.notify(`${t('toast.error')}: ${error.message}`, false)
+                }
+              },
+            },
+            {
+              id: 'copy-path',
+              label: t('preview.copyPath'),
+              run: async () => {
+                try {
+                  await navigator.clipboard.writeText(file)
+                  ctx.contextMenus.notify(t('menu.copyPathDone'), true)
+                } catch (error) {
+                  ctx.contextMenus.notify(`${t('toast.error')}: ${error.message}`, false)
+                }
+              },
+            },
+          ]
+        },
+      }), 'dsh-leaf: file latex actions')
+
       ctx.effect(() => ctx.shortcuts.register({
         id: 'dsh-leaf.open',
         label: () => t('panel.open'),
@@ -2370,7 +2459,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     return {
-      inject: ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts', 'uiWorkspace'],
+      inject: ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts', 'uiWorkspace', 'sessions', 'workspaces'],
       apply,
     }
   },

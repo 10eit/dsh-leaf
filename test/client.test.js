@@ -59,7 +59,7 @@ test('client bundle registers the writing panel and renders', { skip: renderer =
     if (id === 'react') return renderer.React
     throw new Error(`Unexpected client module request: ${id}`)
   })
-  assert.deepEqual(plugin.inject, ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts', 'uiWorkspace'])
+  assert.deepEqual(plugin.inject, ['slots', 'layout', 'locale', 'contextMenus', 'shortcuts', 'uiWorkspace', 'sessions', 'workspaces'])
 
   const registrations = []
   const menus = []
@@ -89,7 +89,12 @@ test('client bundle registers the writing panel and renders', { skip: renderer =
   assert.ok(registrations.includes('main'))
   assert.ok(registrations.includes('sidebar.panellist'))
   assert.ok(registrations.includes('contextMenu.icon'))
-  assert.deepEqual(menus.map((menu) => menu.id).sort(), ['dsh-leaf.close', 'dsh-leaf.open'])
+  assert.deepEqual(menus.map((menu) => menu.id).sort(), [
+    'dsh-leaf.close',
+    'dsh-leaf.file-latex',
+    'dsh-leaf.file-open',
+    'dsh-leaf.open',
+  ])
   assert.equal(appended.length, 1, 'styles are installed exactly once')
   assert.equal(typeof Panel, 'function')
 
