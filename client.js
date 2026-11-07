@@ -445,7 +445,7 @@ window.__ModuleLoader__.load({
 .leaf-btn.ghost{border-color:transparent;background:transparent}
 .leaf-btn.ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-btn.icon{width:30px;padding:0}
-.leaf-btn.small{height:26px;padding:0 8px;font-size:12px;border-radius:6px}
+.leaf-btn.small{height:28px;padding:0 9px;font-size:12px;border-radius:6px}
 .leaf-btn.danger{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l2)}
 .leaf-select{height:30px;max-width:230px;padding:0 8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer}
 .leaf-select:focus-visible,.leaf-btn:focus-visible,.leaf-input:focus-visible,.leaf-textarea:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
@@ -467,7 +467,7 @@ window.__ModuleLoader__.load({
 .leaf-pane-head{display:flex;align-items:center;gap:6px;height:36px;padding:0 8px 0 11px;border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;color:var(--dsw-alias-label-secondary);font-size:13px;font-weight:600}
 .leaf-pane-head .leaf-spacer{flex:1}
 .leaf-tree-scroll{flex:1;overflow:auto;padding:4px 0 16px;min-height:0}
-.leaf-row{display:flex;align-items:center;gap:6px;height:27px;padding-right:8px;cursor:pointer;border-radius:5px;margin:0 4px;user-select:none;color:var(--dsw-alias-label-primary);font-size:13.5px;white-space:nowrap}
+.leaf-row{display:flex;align-items:center;gap:6px;height:29px;padding-right:8px;cursor:pointer;border-radius:5px;margin:0 4px;user-select:none;color:var(--dsw-alias-label-primary);font-size:13.5px;white-space:nowrap}
 .leaf-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .leaf-row.active{background:var(--dsw-alias-interactive-bg-active,var(--dsw-alias-bg-layer-2))}
 .leaf-row .leaf-name{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
@@ -475,7 +475,7 @@ window.__ModuleLoader__.load({
 .leaf-row:hover .leaf-row-actions{display:flex}
 .leaf-caret{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex:none;color:var(--dsw-alias-label-tertiary);transition:transform .12s ease}
 .leaf-caret.open{transform:rotate(90deg)}
-.leaf-ext{width:18px;height:18px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex:none;letter-spacing:-.2px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace}
+.leaf-ext{width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:none;letter-spacing:-.2px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace}
 .leaf-ext.tex{background:#e7f2ea;color:#1f7a4d}.leaf-ext.bib{background:#f3eee2;color:#8a6a1f}.leaf-ext.img{background:#e9eefb;color:#3a5fb0}.leaf-ext.pdf{background:#fbe9e7;color:#b0453a}.leaf-ext.code{background:#eef0f4;color:#5a6472}
 .leaf-tree-hint{padding:10px 12px;color:var(--dsw-alias-label-tertiary);font-size:13px}
 .leaf-editor-col{display:flex;flex-direction:column;flex:1;min-width:280px;min-height:0;background:var(--dsw-alias-bg-base)}
@@ -535,6 +535,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
 .leaf-pdf-actions{display:flex;align-items:center;gap:4px;margin-left:auto;padding:0 6px;flex:none}
 .leaf-paper-body{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-layer-2)}
 .leaf-paper-body iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.leaf-pdf-canvas{position:absolute;inset:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:12px;background:var(--dsw-alias-bg-layer-2)}
+.leaf-pdf-page{position:relative;flex:none;margin:0 auto;background:#fff;box-shadow:0 4px 18px #0000002e}
+.leaf-pdf-page img{width:100%;height:100%;display:block;user-select:none;pointer-events:none}
+.leaf-pdf-text{position:absolute;inset:0;overflow:hidden}
+.leaf-pdf-word{position:absolute;color:transparent;white-space:pre;overflow:hidden;cursor:text;user-select:text;font-family:ui-serif,Georgia,serif}
+.leaf-pdf-word::selection{background:#4176e673}
+.leaf-pdf-loading{display:flex;align-items:center;gap:8px;margin:auto;color:var(--dsw-alias-label-tertiary);font-size:13px}
 .leaf-paper-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:12px}
 .leaf-paper-empty strong{color:var(--dsw-alias-label-secondary);font-size:13px;font-weight:600}
 .leaf-resizer{width:5px;margin-left:-3px;margin-right:-2px;cursor:col-resize;z-index:3;flex:none;position:relative}
@@ -740,6 +747,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       return url.href
     }
 
+    function pdfPageUrl(workspace, page, version, scale = 2) {
+      const url = new URL('dsh-leaf/pdf/page', document.baseURI)
+      url.search = workspaceQuery(workspace, { page: String(page), scale: String(scale), v: String(version ?? '') })
+      return url.href
+    }
+
     function usePersisted(key, fallback) {
       const [value, setValue] = useState(() => readStored(key, fallback))
       const update = useCallback((next) => {
@@ -785,7 +798,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     function Chevron({ open }) {
-      return h('svg', { width: 14, height: 14, viewBox: '0 0 16 16', 'aria-hidden': true, className: `leaf-caret${open ? ' open' : ''}` },
+      return h('svg', { width: 16, height: 16, viewBox: '0 0 16 16', 'aria-hidden': true, className: `leaf-caret${open ? ' open' : ''}` },
         h('path', { d: 'M6 3.5 10.5 8 6 12.5', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }),
       )
     }
@@ -969,7 +982,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     }
 
     /** Virtualized textarea editor with a themed syntax layer. */
-    function LatexEditor({ tab, jump, selection, onChange, onSave, onCompile, onCursor, onReference, onSendToAgent, onSelectionChange, t }) {
+    function LatexEditor({ tab, jump, selection, onChange, onSave, onCompile, onSelectionChange, t }) {
       const textareaRef = useRef(null)
       const wrapRef = useRef(null)
       const [scrollTop, setScrollTop] = useState(tab?.scrollTop ?? 0)
@@ -1044,7 +1057,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         const line = before.split('\n').length
         const column = before.length - before.lastIndexOf('\n')
         setCursor({ line, column })
-        onCursor?.({ line, column })
         const selected = node.value.slice(node.selectionStart, node.selectionEnd)
         const fromLine = before.split('\n').length
         const toLine = fromLine + (selected.split('\n').length - 1)
@@ -1053,7 +1065,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           lastSelection.current = signature
           onSelectionChange?.(selected === '' ? null : { path: tab.path, fromLine, toLine, text: selected, start: node.selectionStart, end: node.selectionEnd })
         }
-      }, [tab?.content, onCursor, onSelectionChange])
+      }, [tab?.content, onSelectionChange])
 
       useEffect(() => {
         updateCursor()
@@ -1239,45 +1251,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             }),
           ),
         ),
-        h('div', { className: 'leaf-statusbar' },
-          h('span', null, tab === undefined ? '' : `${t('editor.line')} ${cursor.line}, ${t('editor.column')} ${cursor.column}`),
-          h('span', null, `${lines.length} ${t('editor.line')}`),
-          h('span', { className: 'leaf-spacer' }),
-          h('button', {
-            type: 'button',
-            className: 'leaf-btn small ghost',
-            title: t('editor.copyRef'),
-            onClick: () => {
-              const node = textareaRef.current
-              if (node === null || tab === undefined) return
-              const selected = node.value.slice(node.selectionStart, node.selectionEnd)
-              const before = node.value.slice(0, node.selectionStart)
-              const fromLine = before.split('\n').length
-              const toLine = fromLine + (selected.split('\n').length - 1)
-              onReference?.({ path: tab.path, fromLine, toLine, text: selected })
-            },
-          }, h(Icon, { name: 'copy' }), t('editor.copyRef')),
-          h('button', {
-            type: 'button',
-            className: 'leaf-btn small ghost',
-            title: t('editor.toAgent'),
-            onClick: () => {
-              const node = textareaRef.current
-              if (node === null || tab === undefined) return
-              const selected = node.value.slice(node.selectionStart, node.selectionEnd)
-              const before = node.value.slice(0, node.selectionStart)
-              const fromLine = before.split('\n').length
-              const toLine = fromLine + (selected.split('\n').length - 1)
-              onSendToAgent?.({ path: tab.path, fromLine, toLine, text: selected })
-            },
-          }, h(LeafMark, { size: 14 }), t('editor.toAgent')),
-          h('button', {
-            type: 'button',
-            className: 'leaf-btn small ghost',
-            title: t('editor.locatePdf'),
-            onClick: () => onCursor?.({ line: cursor.line, locate: true }),
-          }, h(Icon, { name: 'location' }), t('editor.locatePdf')),
-        ),
       )
     }
 
@@ -1294,7 +1267,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         onClick: () => (isDir ? onToggle(entry.path) : onOpen(entry)),
       },
         isDir ? h(Chevron, { open: expanded.has(entry.path) }) : h('span', { style: { width: 14, flex: 'none' } }),
-        isDir ? h(Icon, { name: 'folder', size: 18 }) : h(TypeBadge, { name: entry.name }),
+        isDir ? h(Icon, { name: 'folder', size: 22 }) : h(TypeBadge, { name: entry.name }),
         h('span', { className: 'leaf-name' }, entry.name),
       )
     }
@@ -1337,13 +1310,13 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
       }
       return h('div', { className: 'leaf-tree', style: width === undefined ? undefined : { width } },
         h('div', { className: 'leaf-pane-head' },
-          h(Icon, { name: 'folder', size: 20 }),
+          h(Icon, { name: 'folder', size: 22 }),
           h('span', null, t('tree.title')),
           h('span', { className: 'leaf-spacer' }),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus', size: 18 })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.init'), onClick: onInit }, h(Icon, { name: 'file', size: 18 })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.refresh'), onClick: onRefresh }, h(Icon, { name: 'refresh', size: 18 })),
-          onClose === undefined ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 18 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.new'), onClick: onNewFile }, h(Icon, { name: 'plus', size: 20 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.init'), onClick: onInit }, h(Icon, { name: 'file', size: 20 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('tree.refresh'), onClick: onRefresh }, h(Icon, { name: 'refresh', size: 20 })),
+          onClose === undefined ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 20 })),
         ),
         h('div', { className: 'leaf-tree-scroll' },
           loading ? h('div', { className: 'leaf-tree-hint' }, t('common.loading')) : renderDir('', 0),
@@ -1359,8 +1332,109 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
     /* Paper pane                                                          */
     /* ------------------------------------------------------------------ */
 
-    function PaperPane({ url, stale, page, fit, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent }) {
-      const hash = `#page=${page}&zoom=${fit === 'page' ? 'page-fit' : 'page-width'}&toolbar=0&navpanes=0&statusbar=0&messages=0&scrollbar=1`
+    /**
+     * PDF page image + invisible text layer. Selecting text reports the word
+     * centre so the host can run a SyncTeX inverse search to the source line.
+     */
+    function PdfCanvas({ workspace, page, fit, url, version, t, onLocate, onPages }) {
+      const hostRef = useRef(null)
+      const [data, setData] = useState(null)
+      const [fallback, setFallback] = useState(false)
+      const [box, setBox] = useState({ width: 0, height: 0 })
+      const pageNumber = Math.max(1, Math.round(Number(page) || 1))
+
+      useEffect(() => {
+        if (workspace === null || url === null) return undefined
+        const controller = new AbortController()
+        setData(null)
+        setFallback(false)
+        api(`/pdf/text?${workspaceQuery(workspace, { page: String(pageNumber), v: String(version ?? '') })}`, { signal: controller.signal })
+          .then((payload) => {
+            setData(payload)
+            onPages?.(Number(payload.pages) || 0)
+          })
+          .catch((error) => {
+            if (error?.name !== 'AbortError') setFallback(true)
+          })
+        return () => controller.abort()
+      }, [workspace, url, pageNumber, version, onPages])
+
+      useEffect(() => {
+        const node = hostRef.current
+        if (node === null) return undefined
+        const measure = () => setBox({ width: node.clientWidth, height: node.clientHeight })
+        measure()
+        if (typeof ResizeObserver === 'undefined') return undefined
+        const observer = new ResizeObserver(measure)
+        observer.observe(node)
+        return () => observer.disconnect()
+      }, [])
+
+      if (url === null) return null
+      if (fallback) {
+        return h('iframe', {
+          title: t('paper.title'),
+          src: `${url}#page=${pageNumber}&zoom=${fit === 'page' ? 'page-fit' : 'page-width'}&toolbar=0&navpanes=0&statusbar=0&messages=0`,
+        })
+      }
+      if (data === null) {
+        return h('div', { className: 'leaf-pdf-canvas', ref: hostRef },
+          h('div', { className: 'leaf-pdf-loading' }, h('span', { className: 'leaf-spin' }), t('paper.textLoading')))
+      }
+      const availableWidth = Math.max(120, box.width - 24)
+      const availableHeight = Math.max(120, box.height - 24)
+      const widthScale = availableWidth / data.width
+      const scale = fit === 'page'
+        ? Math.min(widthScale, availableHeight / data.height)
+        : widthScale
+      const width = Math.max(1, data.width * scale)
+      const height = Math.max(1, data.height * scale)
+      const locate = () => {
+        const selection = window.getSelection()
+        if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return
+        for (const node of [selection.anchorNode, selection.focusNode]) {
+          const element = node?.nodeType === 3 ? node.parentElement : node
+          const word = element?.closest?.('.leaf-pdf-word')
+          if (word === undefined || word === null) continue
+          onLocate?.({
+            page: Number(word.dataset.page),
+            x: Number(word.dataset.x),
+            y: Number(word.dataset.y),
+          })
+          return
+        }
+      }
+      return h('div', { className: 'leaf-pdf-canvas', ref: hostRef },
+        h('div', { className: 'leaf-pdf-page', style: { width, height }, onMouseUp: locate },
+          h('img', {
+            src: pdfPageUrl(workspace, pageNumber, version),
+            alt: '',
+            draggable: false,
+          }),
+          h('div', { className: 'leaf-pdf-text', style: { width, height } },
+            data.words.map((word, index) => h('span', {
+              key: index,
+              className: 'leaf-pdf-word',
+              style: {
+                left: `${word.x * scale}px`,
+                top: `${word.y * scale}px`,
+                width: `${Math.max(1, word.w * scale)}px`,
+                height: `${Math.max(1, word.h * scale)}px`,
+                fontSize: `${Math.max(4, word.h * scale)}px`,
+                lineHeight: `${Math.max(1, word.h * scale)}px`,
+              },
+              'data-page': String(pageNumber),
+              'data-x': String(word.x + word.w / 2),
+              'data-y': String(word.y + word.h / 2),
+            }, word.text)),
+          ),
+        ),
+      )
+    }
+
+    function PaperPane({ url, stale, page, fit, onPage, onFit, onReload, onExport, t, style, tab, onTab, receipt, onOpenProblem, onFullLog, onFixWithAgent, workspace, pdfVersion, onLocate }) {
+      const [pageCount, setPageCount] = useState(0)
+      const handlePages = useCallback((count) => setPageCount(count), [])
       const problems = (receipt?.errors?.length ?? 0) + (receipt?.warnings?.length ?? 0) + (receipt?.missing?.length ?? 0)
       return h('div', { className: 'leaf-paper', style },
         h('div', { className: 'leaf-tabs' },
@@ -1368,12 +1442,12 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             className: `leaf-tab${tab === 'pdf' ? ' active' : ''}`,
             onClick: () => onTab('pdf'),
             title: t('paper.title'),
-          }, h(Icon, { name: 'file', size: 18 }), h('span', { className: 'leaf-name' }, t('paper.title'))),
+          }, h(Icon, { name: 'file', size: 20 }), h('span', { className: 'leaf-name' }, t('paper.title'))),
           h('div', {
             className: `leaf-tab${tab === 'log' ? ' active' : ''}`,
             onClick: () => onTab('log'),
             title: t('log.title'),
-          }, h(Icon, { name: 'warning', size: 18 }), h('span', { className: 'leaf-name' }, t('log.title')),
+          }, h(Icon, { name: 'warning', size: 20 }), h('span', { className: 'leaf-name' }, t('log.title')),
             problems > 0 ? h('span', { className: 'leaf-ext', style: { width: 'auto', padding: '0 5px' } }, String(problems)) : null),
           tab === 'pdf'
             ? h('div', { className: 'leaf-pdf-actions' },
@@ -1385,6 +1459,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   inputMode: 'numeric',
                   onChange: (event) => onPage(event.target.value.replace(/[^0-9]/g, '')),
                 }),
+                pageCount > 0 ? h('span', { className: 'leaf-muted', style: { fontSize: 12 } }, `/ ${pageCount}`) : null,
                 h('select', {
                   className: 'leaf-select',
                   style: { height: 24, fontSize: 12, maxWidth: 104 },
@@ -1394,9 +1469,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                   h('option', { value: 'width' }, t('paper.fitWidth')),
                   h('option', { value: 'page' }, t('paper.fitPage')),
                 ),
-                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 18 })),
-                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 18 })),
-                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external', size: 18 })),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.reload'), onClick: onReload }, h(Icon, { name: 'refresh', size: 20 })),
+                url === null ? null : h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('paper.export'), onClick: onExport }, h(Icon, { name: 'download', size: 20 })),
+                url === null ? null : h('a', { className: 'leaf-btn icon small ghost', title: t('paper.openNew'), href: url, target: '_blank', rel: 'noreferrer' }, h(Icon, { name: 'external', size: 20 })),
               )
             : null,
         ),
@@ -1416,7 +1491,16 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
               h('div', { className: 'leaf-paper-body' },
                 url === null
                   ? h('div', { className: 'leaf-paper-empty' }, h(LeafMark, { size: 30 }), h('strong', null, t('paper.empty')), h('span', null, t('paper.emptyHint')))
-                  : h('iframe', { title: t('paper.title'), src: `${url}${hash}`, key: `${url}${hash}` }),
+                  : h(PdfCanvas, {
+                      workspace,
+                      page,
+                      fit,
+                      url,
+                      version: pdfVersion,
+                      t,
+                      onLocate,
+                      onPages: handlePages,
+                    }),
               ),
             ),
       )
@@ -1458,7 +1542,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             },
           }, h(Icon, { name: 'copy' }), t('preview.copyPath')),
           h('button', { type: 'button', className: 'leaf-btn small ghost', title: t('preview.reveal'), onClick: () => api('/reveal', { body: { workspace, path: preview.path } }).catch(() => {}) }, h(Icon, { name: 'location' })),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 18 })),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('preview.close'), onClick: onClose }, h(Icon, { name: 'close', size: 20 })),
         ),
         h('div', { className: 'leaf-preview-body' },
           preview.kind === 'image'
@@ -2009,29 +2093,25 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
         }
       }, [openFile])
 
-      const locateInPdf = useCallback(async (payload) => {
-        if (workspacePath === null || activeTab === null) return
+      const locateFromPdf = useCallback(async ({ page, x, y }) => {
+        if (workspacePath === null) return
         try {
-          const query = workspaceQuery(workspacePath, { path: activeTab.path, line: String(payload?.line ?? 1), column: '1' })
-          const result = await api(`/synctex/forward?${query}`)
-          setPdfPage(String(result.page))
-          setPdfFit('width')
-          setPdfReloadKey(Date.now())
-        } catch {
-          showToast(t('editor.locateFailed'))
+          const query = workspaceQuery(workspacePath, { page: String(page), x: String(x), y: String(y) })
+          const result = await api(`/synctex/inverse?${query}`)
+          if (typeof result?.file !== 'string' || result.file === '') throw new Error('SyncTeX did not return a source file.')
+          const existing = tabsRef.current.find((tab) => tab.path === result.file)
+          if (existing !== undefined) {
+            setActiveTabPath(result.file)
+            setPreview(null)
+          } else {
+            await openFile({ path: result.file, name: basename(result.file), extension: extOf(result.file), mtime: 0, size: 0 })
+          }
+          setJump({ path: result.file, line: result.line, at: Date.now() })
+          showToast(t('paper.located', { file: basename(result.file), line: result.line }))
+        } catch (error) {
+          showToast(`${t('toast.error')}: ${error.message}`)
         }
-      }, [workspacePath, activeTab])
-
-      const copyReference = useCallback(async ({ path, fromLine, toLine }) => {
-        const absolute = workspacePath === null ? path : `${workspacePath}/${path}`
-        const text = `@${absolute}${fromLine === toLine ? `#L${fromLine}` : `#L${fromLine}-L${toLine}`}`
-        try {
-          await navigator.clipboard.writeText(text)
-          showToast(t('editor.copied'))
-        } catch {
-          showToast(text)
-        }
-      }, [workspacePath])
+      }, [workspacePath, openFile, t])
 
       const fixWithAgent = useCallback(() => {
         if (activeWorkspace === null || activeWorkspace === undefined || receipt === null) return
@@ -2124,18 +2204,6 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           showToast(`${t('toast.error')}: ${error.message}`)
         }
       }, [assist, t, showToast])
-
-      const sendToAgent = useCallback((payload) => {
-        if (activeWorkspace === null || activeWorkspace === undefined) return
-        const header = activeWorkspace.title || basename(activeWorkspace.path)
-        const lines = [t('editor.agentPromptTitle'), '']
-        lines.push(t('editor.agentPromptFile', { path: payload.path, from: payload.fromLine, to: payload.toLine }))
-        if (payload.text !== undefined && payload.text.trim() !== '') {
-          lines.push(t('editor.agentPromptSelection'), '```latex', payload.text, '```')
-        }
-        lines.push('', t('editor.agentPromptAsk'))
-        props.startWritingAgent?.(activeWorkspace.workspaceId, `${header}\n\n${lines.join('\n')}`)
-      }, [activeWorkspace, t])
 
       const createFile = useCallback(async (input) => {
         if (workspacePath === null) return
@@ -2241,7 +2309,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
             className: `leaf-btn icon small ${drawerOpen ? '' : 'ghost'}`,
             title: t('tree.title'),
             onClick: () => setDrawerOpenRaw((value) => !boolStored(value, false)),
-          }, h(Icon, { name: 'folder', size: 20 })),
+          }, h(Icon, { name: 'folder', size: 22 })),
           h('label', { className: 'leaf-field' },
             h('span', null, t('toolbar.main')),
             h('select', {
@@ -2297,8 +2365,8 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                 className: 'leaf-btn primary',
                 onClick: () => compile(),
                 disabled: project?.mainDocument === null || environment?.available === false,
-              }, h(Icon, { name: 'play', size: 18 }), t('toolbar.compile')),
-          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings', size: 18 })),
+              }, h(Icon, { name: 'play', size: 20 }), t('toolbar.compile')),
+          h('button', { type: 'button', className: 'leaf-btn icon small ghost', title: t('toolbar.settings'), onClick: () => setModal({ kind: 'settings' }) }, h(Icon, { name: 'settings', size: 20 })),
         ),
         dirtyCount > 0 ? h('div', { className: 'leaf-banner' }, h('span', null, `${dirtyCount} ${t('editor.unsaved')}`), h('span', { className: 'leaf-spacer' }), h('button', { type: 'button', className: 'leaf-btn small', onClick: () => saveTab(activeTabPath) }, t('editor.save'))) : null,
         state?.ambiguousMain === true ? h('div', { className: 'leaf-banner warn' }, h(Icon, { name: 'warning' }), h('span', null, t('main.ambiguous'))) : null,
@@ -2383,12 +2451,7 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
                       onChange: (content) => updateTab(activeTab.path, content),
                       onSave: () => saveTab(activeTab.path),
                       onCompile: () => compile(),
-                      onReference: copyReference,
-                      onSendToAgent: sendToAgent,
                       onSelectionChange: setSelection,
-                      onCursor: (payload) => {
-                        if (payload?.locate === true) locateInPdf(payload)
-                      },
                     }),
                   ),
             h('div', { className: 'leaf-agent-dock', style: { height: assist === null ? 92 : 300 } },
@@ -2452,6 +2515,9 @@ body[data-ds-dark-theme] .leaf-tok-cmd{color:#d6a4f0}body[data-ds-dark-theme] .l
           h('div', { className: 'leaf-resizer', onPointerDown: onPaperResize, 'aria-hidden': true }),
           h(PaperPane, {
             url: pdfSrc,
+            workspace: workspacePath,
+            pdfVersion,
+            onLocate: locateFromPdf,
             stale: pdfStale || (pdf === null && buildStatus === 'failed'),
             page: pdfPage,
             fit: pdfFit,

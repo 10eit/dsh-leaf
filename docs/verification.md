@@ -80,7 +80,25 @@ workbench session session-18501068-71db-46c5-8323-0046dda1c41b (created)
 
 会话日志确认了 `session/title = "DSH-leaf 工作台"`、`turn/start`，以及 700ms 后的 `turn/end (aborted: user)`；workspace 存储中出现该 session、`pinnedSessionIds` 和工作区置顶记录。首次启用只消耗一个被立即取消的模型轮次，用来让会话从空白占位变成持久行。
 
-### 2.5 环境检测
+### 2.5 PDF 文本层与反向定位
+
+`tools/pdfhelper.swift` 用 macOS PDFKit 生成页图和逐词框：
+
+```text
+words 53 pages 2 size 595.28 841.89
+png .dsh-leaf/build/pdfpage/v1-1-1-2.png
+```
+
+用词框中心调用 SyncTeX inverse，真实映射到：
+
+```text
+1:326:183 → main.tex:13
+1:300:484 → sections/introduction.tex:7
+```
+
+客户端自绘页图 + 隐形文本层，选中 PDF 文字后取词框中心调用 `/dsh-leaf/synctex/inverse`，打开对应源码并跳行；无法建立文本层时回退内建阅读器。
+
+### 2.6 环境检测
 
 ```text
 status: detected, available: true
@@ -128,8 +146,8 @@ bundle 尾部为 `//# sourceMappingURL=??dsh-leaf/client.js.map&rev=…`，可�
 
 ```text
 $ npm test
-# tests 26
-# pass 26
+# tests 27
+# pass 27
 # fail 0
 ```
 

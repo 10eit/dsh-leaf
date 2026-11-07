@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict'
 import http from 'node:http'
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -42,6 +42,8 @@ async function harness(root, options = {}) {
     builds: new BuildManager({ ctx }),
     ...(options.assist === undefined ? {} : { assist: options.assist }),
     ...(options.workbench === undefined ? {} : { workbench: options.workbench }),
+    ...(options.pdfText === undefined ? {} : { pdfText: options.pdfText }),
+    ...(options.pdfPage === undefined ? {} : { pdfPage: options.pdfPage }),
   }
   registerLeafRoutes(ctx, leaf)
   assert.ok(route !== null)
@@ -203,6 +205,38 @@ test('pinning renames and reorders the workspace, unpinning restores the title',
     })
     assert.equal(unpinned.status, 200)
     assert.equal(entity.title, 'my-paper')
+  } finally {
+    await server.close()
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('the PDF text route returns per-page geometry for the current PDF', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'dsh-leaf-pdf-'))
+  await mkdir(path.join(dir, '.dsh-leaf', 'build', 'fast'), { recursive: true })
+  await writeFile(path.join(dir, '.dsh-leaf', 'build', 'fast', 'main-fast.pdf'), '%PDF-1.4\n')
+  await writeFile(path.join(dir, '.dsh-leaf', 'project.json'), JSON.stringify({
+    version: 1,
+    workspace: dir,
+    enabled: true,
+    mainDocument: 'main.tex',
+    lastBuild: { pdf: { path: '.dsh-leaf/build/fast/main-fast.pdf', mtime: 3 } },
+  }))
+  const calls = []
+  const server = await harness(dir, {
+    pdfText: async (input) => {
+      calls.push(input)
+      return { page: input.page, pages: 2, width: 595.28, height: 841.89, words: [{ text: 'dsh-leaf', x: 10, y: 20, w: 30, h: 10 }] }
+    },
+  })
+  try {
+    const response = await fetch(`${server.base}/dsh-leaf/pdf/text?${new URLSearchParams({ workspace: dir, page: '1' })}`)
+    assert.equal(response.status, 200)
+    const payload = await response.json()
+    assert.equal(payload.pages, 2)
+    assert.equal(payload.words[0].text, 'dsh-leaf')
+    assert.equal(calls[0].page, 1)
+    assert.match(calls[0].pdfPath, /main-fast\.pdf$/)
   } finally {
     await server.close()
     await rm(dir, { recursive: true, force: true })
